@@ -274,7 +274,7 @@ const DEFAULT_UNIVERSE = [
   { ticker: "ENEL.MI", name: "Enel SpA",                  sector: "Utilities",     buyDate: "2025-04-01" },
   { ticker: "ENI.MI",  name: "Eni S.p.A.",                sector: "Energia",       buyDate: "2025-04-01" },
   { ticker: "G.MI",    name: "Assicurazioni Generali",    sector: "Finanziario",   buyDate: "2025-04-01" },
-  { ticker: "STM.MI",  name: "STMicroelectronics N.V.",   sector: "Tecnologia",    buyDate: "2025-04-01" },
+  { ticker: "STMMI.MI",  name: "STMicroelectronics N.V.",   sector: "Tecnologia",    buyDate: "2025-04-01" },
   { ticker: "CPR.MI",  name: "Davide Campari-Milano N.V.", sector: "Consumer",     buyDate: "2025-04-01" },
   { ticker: "REC.MI",  name: "Recordati S.p.A.",          sector: "Salute",        buyDate: "2025-04-01" }
 ];
@@ -398,43 +398,46 @@ async function loadDefaultUniverse() {
   setStatus("⏳ Caricamento universo default — recupero prezzi storici al 1 Aprile 2025...");
   const rows = [];
   for (const t of DEFAULT_UNIVERSE) {
+    let buyPrice = null;
+    let currentPrice = null;
     try {
-      // Fetch 1 anno di storia per trovare il prezzo al 1 Aprile 2025
-      const data = await fetchYahoo(t.ticker, "1y", "1d");
+      // Fetch storico per trovare prezzo al 1 Aprile 2025
+      const data = await fetchYahoo(t.ticker, "max", "1d");
       const result = data?.chart?.result?.[0];
       const timestamps = result?.timestamp || [];
       const closes = result?.indicators?.quote?.[0]?.close || [];
-      // Trova il prezzo più vicino al 1 Aprile 2025
       const targetTs = new Date("2025-04-01").getTime() / 1000;
-      let buyPrice = null;
       let minDiff = Infinity;
       timestamps.forEach((ts, i) => {
         const diff = Math.abs(ts - targetTs);
-        if (diff < minDiff && closes[i]) {
+        if (diff < minDiff && closes[i] != null) {
           minDiff = diff;
           buyPrice = closes[i];
         }
       });
-      const currentPrice = result?.meta?.regularMarketPrice;
-      rows.push({
-        id: `simuni_${t.ticker}_${currentUser}`,
-        user_id: currentUser,
-        ticker: t.ticker,
-        name: t.name,
-        sector: t.sector,
-        buy_price_ref: buyPrice ? parseFloat(buyPrice.toFixed(4)) : null,
-        current_price_ref: currentPrice || null,
-        currency: "EUR"
-      });
-      setStatus(`⏳ ${t.ticker} → €${buyPrice?.toFixed(2) || "--"}`);
-      await new Promise(r => setTimeout(r, 400));
+      currentPrice = result?.meta?.regularMarketPrice || null;
+      setStatus(`⏳ ${t.ticker} → Ref: €${buyPrice?.toFixed(2) || "--"} | Att: €${currentPrice?.toFixed(2) || "--"}`);
     } catch(e) {
-      rows.push({ id: `simuni_${t.ticker}_${currentUser}`, user_id: currentUser, ticker: t.ticker, name: t.name, sector: t.sector });
+      setStatus(`⚠ ${t.ticker}: errore fetch`);
     }
+    const row = {
+      id: `simuni_${t.ticker}_${currentUser}`,
+      user_id: currentUser,
+      ticker: t.ticker,
+      name: t.name,
+      sector: t.sector,
+      currency: "EUR",
+      buy_price_ref: buyPrice != null ? parseFloat(buyPrice.toFixed(4)) : null,
+      current_price_ref: currentPrice != null ? parseFloat(currentPrice.toFixed(4)) : null
+    };
+    rows.push(row);
+    // Salva subito ogni titolo
+    await sbFetch("sim_universe?on_conflict=id", "POST", [row]);
+    await new Promise(r => setTimeout(r, 500));
   }
-  await sbFetch("sim_universe?on_conflict=id", "POST", rows);
   simUniverse = rows;
-  setStatus("✅ Universo default caricato con prezzi al 1 Aprile 2025");
+  setStatus(`✅ Universo default caricato — ${rows.filter(r=>r.buy_price_ref).length}/${rows.length} prezzi trovati`);
+  renderUniverse();
 }
 
 // ── RENDER ALL ────────────────────────────────────────────────────────
