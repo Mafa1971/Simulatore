@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FMP Trading — Simulatore Rotazionale</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#070d1a;--panel:#111827;--panel2:#1a2030;--line:#1e2d45;--txt:#eef1f7;--dim:#7d8aa3;--gold:#d4a017;--gold2:#f0c040;--green:#00d4b8;--red:#ff6b6b;--blue:#4fa3ff;}
+body{background:var(--bg);color:var(--txt);font-family:'Manrope',sans-serif;font-size:14px;min-height:100vh;}
+#loginScreen{display:flex;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
+.logo{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sub-label{font-size:10px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;}
+.lcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px;width:100%;max-width:340px;}
+.lcard label{display:block;font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;}
+.lcard select,.lcard input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:11px 14px;font-family:'Manrope',sans-serif;font-size:13px;border-radius:8px;outline:none;margin-bottom:14px;box-sizing:border-box;}
+.btn-login{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#111;border:none;padding:12px;border-radius:10px;font-family:'Manrope',sans-serif;font-weight:800;font-size:13px;cursor:pointer;}
+.err{font-size:11px;color:var(--red);text-align:center;min-height:16px;margin-top:6px;}
+#appContent{display:none;}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;gap:10px;flex-wrap:wrap;}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.btn{padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);cursor:pointer;font-family:'Manrope',sans-serif;font-size:11px;font-weight:700;}
+.btn.primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#111;border:none;}
+.btn.success{background:#00d4b822;color:#00d4b8;border-color:#00d4b844;}
+.btn.danger{background:#ff6b6b22;color:#ff6b6b;border-color:#ff6b6b44;}
+.btn.ghost{background:transparent;}
+.badge{padding:4px 10px;border-radius:6px;font-size:9px;font-weight:700;letter-spacing:1px;background:var(--panel2);color:var(--dim);border:1px solid var(--line);}
+main{padding:16px 20px;max-width:1400px;margin:0 auto;}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;}
+.panel-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;}
+.card .v{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;line-height:1;margin-bottom:3px;}
+.card .l{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;padding:7px 8px;text-align:left;border-bottom:1px solid var(--line);}
+td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:middle;}
+.chip{padding:3px 9px;border-radius:5px;font-size:10px;font-weight:700;display:inline-block;}
+.chip.up{background:#00d4b822;color:var(--green);}
+.chip.down{background:#ff6b6b22;color:var(--red);}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);display:flex;z-index:100;}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 4px;background:none;border:none;color:var(--dim);cursor:pointer;font-family:'Manrope',sans-serif;gap:2px;}
+.tab-btn.active{color:var(--gold);}
+.tab-icon{font-size:17px;}
+.tab-label{font-size:9px;font-weight:600;text-transform:uppercase;}
+.tab-content{display:none;padding-bottom:75px;}
+.tab-content.active{display:block;}
+.modal-overlay{display:none;position:fixed;inset:0;background:#000b;z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;}
+.modal h3{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:18px;}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.fg label{font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;}
+.fg input,.fg select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:9px 12px;font-family:'Manrope',sans-serif;font-size:13px;border-radius:8px;outline:none;}
+.empty-state{text-align:center;padding:36px 20px;color:var(--dim);}
+.empty-state .ic{font-size:30px;margin-bottom:10px;}
+.empty-state p{font-size:11px;letter-spacing:1px;text-transform:uppercase;}
+.action-card{border-radius:10px;padding:12px;margin-bottom:8px;}
+.action-card.buy{background:#00d4b811;border:1px solid #00d4b844;}
+.action-card.sell{background:#ff6b6b11;border:1px solid #ff6b6b44;}
+.action-card.hold{background:#ffd23f11;border:1px solid #ffd23f44;}
+a{color:var(--blue);text-decoration:none;}
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <div style="text-align:center;"><div class="logo">FMP TRADING</div><div class="sub-label">Simulatore Rotazionale</div></div>
+  <div class="lcard">
+    <label>Utente</label>
+    <select id="loginUser"><option value="fabrizio">Fabrizio</option><option value="jonathan">Jonathan</option></select>
+    <label>Password</label>
+    <input type="password" id="loginPassword" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-login" onclick="doLogin()">ACCEDI →</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<div id="appContent">
+  <header class="hdr">
+    <div>
+      <div class="logo" style="font-size:18px;">🔄 SIMULATORE</div>
+      <div class="sub-label" id="userBadge" style="margin-top:2px;"></div>
+    </div>
+    <div class="hdr-right">
+      <span class="badge" style="color:#ff9f1c;border-color:#ff9f1c44;">⚠ VIRTUALE</span>
+      <a href="/" class="btn ghost" style="font-size:10px;">← Portfolio</a>
+      <button class="btn ghost" id="btnLogout" style="font-size:10px;">ESCI</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO KPI -->
+    <div class="cards">
+      <div class="card"><div class="v" id="hSimReturn">--</div><div class="l">Rendimento</div></div>
+      <div class="card"><div class="v" id="hSimValue" style="color:var(--gold)">--</div><div class="l">Valore Att.</div></div>
+      <div class="card"><div class="v" id="hSimPL">--</div><div class="l">P&L Virtuale</div></div>
+      <div class="card"><div class="v" id="hSimWin" style="color:var(--green)">--</div><div class="l">Win Rate</div></div>
+      <div class="card"><div class="v" id="hSimPos">0</div><div class="l">Pos. Aperte</div></div>
+      <div class="card"><div class="v" id="hSimLiquidity" style="color:var(--blue)">--</div><div class="l">Liquidità</div></div>
+      <div class="card"><div class="v" id="hSimUniverse" style="color:var(--dim)">0</div><div class="l">Universo</div></div>
+    </div>
+
+    <!-- TAB DASHBOARD -->
+    <div id="tabDashboard" class="tab-content active">
+      <div class="panel">
+        <div class="panel-title">⚙️ CONTROLLI SIMULAZIONE
+          <select id="simProfile" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:8px;font-size:11px;">
+            <option value="conservativo">🛡️ Conservativo (8)</option>
+            <option value="bilanciato" selected>⚖️ Bilanciato (10)</option>
+            <option value="aggressivo">🚀 Aggressivo (12)</option>
+            <option value="allweather">🌦️ All Weather (10)</option>
+            <option value="buffett">🎩 Buffett (10)</option>
+            <option value="tech">💻 Tech Focus (10)</option>
+          </select>
+          <input type="number" id="simCapital" value="20000" step="1000"
+            style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;width:120px;">
+          <button class="btn primary" onclick="runSimulation()">▶ SIMULA</button>
+          <button class="btn success" onclick="openManualPosition()">+ APRI MANUALE</button>
+          <button class="btn ghost" onclick="refreshSimPrices()" style="font-size:10px;">↻ PREZZI</button>
+        </div>
+        <div style="font-size:11px;color:var(--dim);">Simulazione dal <strong style="color:var(--gold);">1 Aprile 2025</strong> • Stop Loss fisso: <strong style="color:var(--red);">-7%</strong> • Revisione mensile</div>
+        <div id="simStatus" style="margin-top:8px;font-size:11px;color:var(--gold);min-height:16px;"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">📂 POSIZIONI SIMULATE APERTE</div>
+        <div id="simPositionsWrap"><div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione — Esegui simulazione o apri manuale</p></div></div>
+      </div>
+
+      <div class="panel" id="rotationPanel" style="display:none;">
+        <div class="panel-title">🔄 SUGGERIMENTI DI ROTAZIONE</div>
+        <div id="rotationWrap"></div>
+      </div>
+    </div>
+
+    <!-- TAB UNIVERSO -->
+    <div id="tabUniverso" class="tab-content">
+      <div class="panel">
+        <div class="panel-title">📋 UNIVERSO TITOLI
+          <span id="universeCount" style="color:var(--blue);font-size:10px;"></span>
+          <button class="btn success" id="btnLoadDefault">🏛️ CARICA DEFAULT MIB</button>
+          <button class="btn primary" id="btnImportUniverse">📊 IMPORTA EXCEL</button>
+          <input type="file" id="universeExcelInput" accept=".xlsx,.xls" style="display:none;">
+          <button class="btn danger" id="btnClearUniverse">🗑 SVUOTA</button>
+        </div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">
+          <strong style="color:var(--gold);">Default MIB:</strong> AZM, BGN, BMED, CE, ENEL, ENI, G, STM, CPR, REC — prezzi al 1 Aprile 2025 caricati automaticamente.
+        </div>
+        <div id="universeWrap"><div class="empty-state"><div class="ic">📊</div><p>Carica il default MIB o importa un file Excel</p></div></div>
+      </div>
+    </div>
+
+    <!-- TAB CLASSIFICA -->
+    <div id="tabClassifica" class="tab-content">
+      <div class="panel">
+        <div class="panel-title">🏆 CLASSIFICA — SCORE COMPOSITO
+          <button class="btn ghost" onclick="loadRanking()" style="font-size:10px;">↻ RICALCOLA</button>
+        </div>
+        <div id="rankingWrap"><div class="empty-state"><p>Esegui una simulazione per vedere la classifica</p></div></div>
+      </div>
+    </div>
+
+    <!-- TAB STORICO -->
+    <div id="tabStorico" class="tab-content">
+      <div class="panel">
+        <div class="panel-title">📅 STORICO OPERAZIONI SIMULATE</div>
+        <div id="closedSimWrap"><div class="empty-state"><p>Nessuna operazione chiusa</p></div></div>
+      </div>
+    </div>
+
+    <!-- TAB STATISTICHE -->
+    <div id="tabStatistiche" class="tab-content">
+      <div class="panel">
+        <div class="panel-title">📊 STATISTICHE SIMULATORE</div>
+        <div id="simStatsWrap"><div class="empty-state"><p>Chiudi operazioni per vedere le statistiche</p></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">📈 EQUITY CURVE — DAL 1 APRILE 2025</div>
+        <div style="height:280px;"><canvas id="chartSimCapital"></canvas></div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('Dashboard')" id="tabBtnDashboard"><span class="tab-icon">🏠</span><span class="tab-label">Dashboard</span></button>
+    <button class="tab-btn" onclick="switchTab('Universo')" id="tabBtnUniverso"><span class="tab-icon">📋</span><span class="tab-label">Universo</span></button>
+    <button class="tab-btn" onclick="switchTab('Classifica')" id="tabBtnClassifica"><span class="tab-icon">🏆</span><span class="tab-label">Classifica</span></button>
+    <button class="tab-btn" onclick="switchTab('Storico')" id="tabBtnStorico"><span class="tab-icon">📅</span><span class="tab-label">Storico</span></button>
+    <button class="tab-btn" onclick="switchTab('Statistiche')" id="tabBtnStatistiche"><span class="tab-icon">📊</span><span class="tab-label">Statistiche</span></button>
+  </nav>
+</div>
+
+<!-- MODAL APRI POSIZIONE MANUALE -->
+<div class="modal-overlay" id="modalOpenSimOverlay">
+  <div class="modal">
+    <h3>📥 Apri Posizione Simulata</h3>
+    <div class="fg"><label>Ticker</label>
+      <select id="openSimTicker"></select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="fg"><label>Prezzo Acquisto €</label><input type="number" id="openSimPrice" step="any" placeholder="es. 25.40"></div>
+      <div class="fg"><label>Quantità</label><input type="number" id="openSimQty" value="100" min="1"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="fg"><label>Data Acquisto</label><input type="date" id="openSimDate" value="2025-04-01"></div>
+      <div class="fg"><label>Profilo</label>
+        <select id="openSimProfile">
+          <option value="conservativo">🛡️ Conservativo</option>
+          <option value="bilanciato" selected>⚖️ Bilanciato</option>
+          <option value="aggressivo">🚀 Aggressivo</option>
+          <option value="allweather">🌦️ All Weather</option>
+          <option value="buffett">🎩 Buffett</option>
+          <option value="tech">💻 Tech Focus</option>
+        </select>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--red);margin-bottom:14px;">🛑 Stop Loss automatico: -7% dal prezzo di acquisto</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn ghost" id="btnCancelOpenSim">Annulla</button>
+      <button class="btn primary" id="btnConfirmOpenSim">Apri Posizione</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CHIUDI POSIZIONE -->
+<div class="modal-overlay" id="modalCloseSimOverlay">
+  <div class="modal">
+    <h3>📤 Chiudi Posizione Simulata</h3>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:14px;" id="closeSimInfo"></div>
+    <div class="fg"><label>Prezzo di Vendita €</label><input type="number" id="closeSimPrice" step="any"></div>
+    <div class="fg"><label>Motivo Uscita</label>
+      <select id="closeSimReason">
+        <option value="target">🎯 Target Raggiunto</option>
+        <option value="stop">🛑 Stop Loss</option>
+        <option value="rotazione">🔄 Rotazione Mensile</option>
+        <option value="manuale">✋ Uscita Manuale</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn ghost" id="btnCancelCloseSim">Annulla</button>
+      <button class="btn primary" id="btnConfirmCloseSim">Chiudi Posizione</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────
+const SUPA_URL = "https://bvzgudqbirlqnotaqame.supabase.co";
+const SUPA_KEY = "sb_publishable_6JQK_8MZHBiEBVnq0ei3cQ_qbiuc5RO";
+
+const USERS = {
+  fabrizio: { password: "Marinportfoglio2026.", name: "FABRIZIO" },
+  jonathan:  { password: "Pessinaportfoglio2026.", name: "JONATHAN" }
+};
+const AUTH_KEY = "sim_auth_v1";
+
+const SIM_PROFILES = {
+  conservativo: { name: "Conservativo", n: 8,  icon: "🛡️", weights: { "Finanziario":30, "Utilities":25, "Salute":20, "Energia":15, "Consumer":10 } },
+  bilanciato:   { name: "Bilanciato",   n: 10, icon: "⚖️", weights: { "Finanziario":30, "Utilities":15, "Salute":15, "Energia":15, "Tecnologia":15, "Consumer":10 } },
+  aggressivo:   { name: "Aggressivo",   n: 12, icon: "🚀", weights: { "Tecnologia":30, "Finanziario":25, "Consumer":20, "Salute":15, "Energia":10 } },
+  allweather:   { name: "All Weather",  n: 10, icon: "🌦️", weights: { "Finanziario":25, "Utilities":25, "Energia":20, "Salute":15, "Tecnologia":15 } },
+  buffett:      { name: "Buffett",      n: 10, icon: "🎩", weights: { "Finanziario":40, "Consumer":25, "Utilities":15, "Salute":10, "Energia":10 } },
+  tech:         { name: "Tech Focus",   n: 10, icon: "💻", weights: { "Tecnologia":40, "Finanziario":20, "Consumer":20, "Salute":10, "Utilities":10 } }
+};
+
+// Titoli di default con prezzi storici al 1 Aprile 2025 (da caricare al primo avvio)
+const DEFAULT_UNIVERSE = [
+  { ticker: "AZM.MI",  name: "Azimut Holding S.p.A.",    sector: "Finanziario",   buyDate: "2025-04-01" },
+  { ticker: "BGN.MI",  name: "Banca Generali S.p.A.",     sector: "Finanziario",   buyDate: "2025-04-01" },
+  { ticker: "BMED.MI", name: "Banca Mediolanum S.p.A.",   sector: "Finanziario",   buyDate: "2025-04-01" },
+  { ticker: "CE.MI",   name: "Credito Emiliano S.p.A.",   sector: "Finanziario",   buyDate: "2025-04-01" },
+  { ticker: "ENEL.MI", name: "Enel SpA",                  sector: "Utilities",     buyDate: "2025-04-01" },
+  { ticker: "ENI.MI",  name: "Eni S.p.A.",                sector: "Energia",       buyDate: "2025-04-01" },
+  { ticker: "G.MI",    name: "Assicurazioni Generali",    sector: "Finanziario",   buyDate: "2025-04-01" },
+  { ticker: "STM.MI",  name: "STMicroelectronics N.V.",   sector: "Tecnologia",    buyDate: "2025-04-01" },
+  { ticker: "CPR.MI",  name: "Davide Campari-Milano N.V.", sector: "Consumer",     buyDate: "2025-04-01" },
+  { ticker: "REC.MI",  name: "Recordati S.p.A.",          sector: "Salute",        buyDate: "2025-04-01" }
+];
+
+let currentUser = null;
+let simPositions = [];
+let closedSimPositions = [];
+let simUniverse = [];
+let lastRanking = [];
+let closingSimId = null;
+let chartSimCapital = null;
+
+// ── SUPABASE ──────────────────────────────────────────────────────────
+async function sbFetch(path, method = "GET", body = null) {
+  const opts = {
+    method,
+    headers: {
+      "apikey": SUPA_KEY,
+      "Authorization": "Bearer " + SUPA_KEY,
+      "Content-Type": "application/json",
+      "Prefer": method === "POST" ? "resolution=merge-duplicates,return=minimal" : "return=representation"
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(SUPA_URL + "/rest/v1/" + path, opts);
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+// ── YAHOO PROXY ───────────────────────────────────────────────────────
+async function fetchYahoo(ticker, range = "1d", interval = "1d") {
+  const url = `/.netlify/functions/yahoo?ticker=${encodeURIComponent(ticker)}&range=${range}&interval=${interval}`;
+  const res = await fetch(url);
+  return await res.json();
+}
+
+// ── LOGIN ──────────────────────────────────────────────────────────────
+window.doLogin = function() {
+  const user = document.getElementById("loginUser").value;
+  const pwd = document.getElementById("loginPassword").value;
+  const u = USERS[user];
+  if (u && pwd === u.password) {
+    currentUser = user;
+    try { localStorage.setItem(AUTH_KEY, user); } catch(e) {}
+    showApp(user);
+  } else {
+    document.getElementById("loginErr").textContent = "Password errata.";
+    document.getElementById("loginPassword").value = "";
+  }
+};
+
+function showApp(user) {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("appContent").style.display = "block";
+  document.getElementById("userBadge").textContent = USERS[user]?.name || user.toUpperCase();
+  init();
+}
+
+document.getElementById("btnLogout").addEventListener("click", () => {
+  if (!confirm("Vuoi uscire?")) return;
+  try { localStorage.removeItem(AUTH_KEY); } catch(e) {}
+  currentUser = null;
+  document.getElementById("appContent").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("loginPassword").value = "";
+});
+
+(function checkAuth() {
+  try {
+    const saved = localStorage.getItem(AUTH_KEY);
+    if (saved && USERS[saved]) {
+      currentUser = saved;
+      document.getElementById("loginUser").value = saved;
+      showApp(saved);
+    }
+  } catch(e) {}
+})();
+
+// ── TAB ───────────────────────────────────────────────────────────────
+window.switchTab = function(name) {
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab" + name).classList.add("active");
+  document.getElementById("tabBtn" + name).classList.add("active");
+  if (name === "Statistiche") setTimeout(renderSimChart, 100);
+  if (name === "Universo") renderUniverse();
+};
+
+// ── INIT ──────────────────────────────────────────────────────────────
+async function init() {
+  setStatus("⏳ Caricamento...");
+  await loadAllData();
+  // Se universo vuoto, carica default
+  if (simUniverse.length === 0) {
+    await loadDefaultUniverse();
+  }
+  renderAll();
+  setStatus("");
+}
+
+function setStatus(msg) {
+  const el = document.getElementById("simStatus");
+  if (el) el.textContent = msg;
+}
+
+async function loadAllData() {
+  try {
+    const [openData, closedData, universeData] = await Promise.all([
+      sbFetch(`sim_positions?select=*&user_id=eq.${currentUser}&status=eq.open&order=buy_date.asc`),
+      sbFetch(`sim_positions?select=*&user_id=eq.${currentUser}&status=eq.closed&order=sell_date.desc`),
+      sbFetch(`sim_universe?select=*&user_id=eq.${currentUser}&order=ticker.asc`)
+    ]);
+    simPositions = openData || [];
+    closedSimPositions = closedData || [];
+    simUniverse = universeData || [];
+  } catch(e) { console.error("Errore caricamento:", e); }
+}
+
+// ── CARICA UNIVERSO DEFAULT ───────────────────────────────────────────
+async function loadDefaultUniverse() {
+  setStatus("⏳ Caricamento universo default — recupero prezzi storici al 1 Aprile 2025...");
+  const rows = [];
+  for (const t of DEFAULT_UNIVERSE) {
+    try {
+      // Fetch 1 anno di storia per trovare il prezzo al 1 Aprile 2025
+      const data = await fetchYahoo(t.ticker, "1y", "1d");
+      const result = data?.chart?.result?.[0];
+      const timestamps = result?.timestamp || [];
+      const closes = result?.indicators?.quote?.[0]?.close || [];
+      // Trova il prezzo più vicino al 1 Aprile 2025
+      const targetTs = new Date("2025-04-01").getTime() / 1000;
+      let buyPrice = null;
+      let minDiff = Infinity;
+      timestamps.forEach((ts, i) => {
+        const diff = Math.abs(ts - targetTs);
+        if (diff < minDiff && closes[i]) {
+          minDiff = diff;
+          buyPrice = closes[i];
+        }
+      });
+      const currentPrice = result?.meta?.regularMarketPrice;
+      rows.push({
+        id: `simuni_${t.ticker}_${currentUser}`,
+        user_id: currentUser,
+        ticker: t.ticker,
+        name: t.name,
+        sector: t.sector,
+        buy_price_ref: buyPrice ? parseFloat(buyPrice.toFixed(4)) : null,
+        current_price_ref: currentPrice || null,
+        currency: "EUR"
+      });
+      setStatus(`⏳ ${t.ticker} → €${buyPrice?.toFixed(2) || "--"}`);
+      await new Promise(r => setTimeout(r, 400));
+    } catch(e) {
+      rows.push({ id: `simuni_${t.ticker}_${currentUser}`, user_id: currentUser, ticker: t.ticker, name: t.name, sector: t.sector });
+    }
+  }
+  await sbFetch("sim_universe?on_conflict=id", "POST", rows);
+  simUniverse = rows;
+  setStatus("✅ Universo default caricato con prezzi al 1 Aprile 2025");
+}
+
+// ── RENDER ALL ────────────────────────────────────────────────────────
+function renderAll() {
+  renderHero();
+  renderSimPositions();
+  renderClosedPositions();
+  renderSimStats();
+}
+
+// ── HERO ──────────────────────────────────────────────────────────────
+function renderHero() {
+  const capital = parseFloat(document.getElementById("simCapital").value) || 20000;
+  let totalBuy = 0, totalCurrent = 0;
+  simPositions.forEach(p => {
+    totalBuy += (p.buy_price || 0) * (p.qty || 0);
+    totalCurrent += (p.current_price || p.buy_price || 0) * (p.qty || 0);
+  });
+  const pl = totalCurrent - totalBuy;
+  const ret = totalBuy > 0 ? (pl / totalBuy * 100) : 0;
+  const winners = closedSimPositions.filter(p => p.sell_price > p.buy_price).length;
+  const winRate = closedSimPositions.length > 0 ? (winners / closedSimPositions.length * 100).toFixed(0) + "%" : "--";
+  const liquidity = capital - totalBuy;
+  const plCol = pl >= 0 ? "#00d4b8" : "#ff6b6b";
+
+  document.getElementById("hSimReturn").textContent = (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%";
+  document.getElementById("hSimReturn").style.color = ret >= 0 ? "#00d4b8" : "#ff6b6b";
+  document.getElementById("hSimValue").textContent = "€" + totalCurrent.toFixed(0);
+  document.getElementById("hSimPL").textContent = (pl >= 0 ? "+" : "") + "€" + pl.toFixed(0);
+  document.getElementById("hSimPL").style.color = plCol;
+  document.getElementById("hSimWin").textContent = winRate;
+  document.getElementById("hSimPos").textContent = simPositions.length;
+  document.getElementById("hSimLiquidity").textContent = "€" + Math.max(0, liquidity).toFixed(0);
+  document.getElementById("hSimUniverse").textContent = simUniverse.length;
+}
+
+// ── RENDER POSIZIONI ──────────────────────────────────────────────────
+function renderSimPositions() {
+  const wrap = document.getElementById("simPositionsWrap");
+  if (!wrap) return;
+  if (simPositions.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione aperta — Esegui una simulazione o apri manualmente</p></div>`;
+    return;
+  }
+  let totalBuy = 0, totalNow = 0;
+  simPositions.forEach(p => {
+    totalBuy += (p.buy_price || 0) * (p.qty || 0);
+    totalNow += (p.current_price || p.buy_price || 0) * (p.qty || 0);
+  });
+
+  let h = `<div style="overflow-x:auto;"><table>
+    <tr>
+      <th>Ticker</th><th>Nome</th><th>Settore</th><th>Qty</th>
+      <th>P.Acq. (01/04)</th><th>Attuale</th><th>Val.Acq.</th><th>Val.Att.</th>
+      <th>P&L %</th><th>P&L €</th><th>Stop -7%</th><th>Data</th><th>Profilo</th><th></th>
+    </tr>`;
+
+  simPositions.forEach(p => {
+    const price = p.current_price || p.buy_price;
+    const pl = ((price - p.buy_price) / p.buy_price * 100);
+    const plAbs = (price - p.buy_price) * p.qty;
+    const valBuy = p.buy_price * p.qty;
+    const valNow = price * p.qty;
+    const plCol = plAbs >= 0 ? "#00d4b8" : "#ff6b6b";
+    const stopHit = p.stop_loss && price <= p.stop_loss;
+    const stopPct = p.stop_loss ? ((price - p.stop_loss) / p.buy_price * 100).toFixed(1) : null;
+    const stopCol = stopHit ? "#ff6b6b" : stopPct && parseFloat(stopPct) < -4 ? "#ffd23f" : "#7d8aa3";
+    h += `<tr style="${stopHit ? 'background:#ff6b6b08;border-left:3px solid #ff6b6b;' : ''}">
+      <td><strong style="color:#4fa3ff;">${p.ticker}</strong>${stopHit ? '<span style="color:#ff6b6b;font-size:10px;display:block;">🛑 STOP HIT</span>' : ''}</td>
+      <td style="font-size:11px;">${p.name||""}</td>
+      <td style="font-size:10px;color:var(--dim);">${p.sector||""}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">${p.qty}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.buy_price).toFixed(2)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">€${parseFloat(price).toFixed(2)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">€${valBuy.toFixed(0)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${valNow>valBuy?"#00d4b8":"#ff6b6b"};">€${valNow.toFixed(0)}</td>
+      <td><span class="chip ${plAbs>=0?'up':'down'}">${pl>=0?'+':''}${pl.toFixed(2)}%</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${plCol};">${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)}</td>
+      <td style="font-size:11px;color:${stopCol};">€${p.stop_loss ? parseFloat(p.stop_loss).toFixed(2) : "--"}</td>
+      <td style="font-size:10px;color:var(--dim);">${p.buy_date||""}</td>
+      <td style="font-size:10px;color:var(--dim);">${p.profile||""}</td>
+      <td>
+        <button onclick="openCloseSim('${p.id}')" style="background:#ff6b6b22;color:#ff6b6b;border:1px solid #ff6b6b44;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:700;">CHIUDI</button>
+      </td>
+    </tr>`;
+  });
+
+  // Totale
+  const totalPL = totalNow - totalBuy;
+  const totalPLPct = totalBuy > 0 ? (totalPL / totalBuy * 100) : 0;
+  h += `<tr style="border-top:2px solid var(--line);font-weight:700;">
+    <td colspan="6" style="padding:10px 8px;">TOTALE PORTAFOGLIO SIMULATO</td>
+    <td style="font-family:'JetBrains Mono',monospace;">€${totalBuy.toFixed(0)}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${totalNow>totalBuy?'#00d4b8':'#ff6b6b'};">€${totalNow.toFixed(0)}</td>
+    <td><span class="chip ${totalPL>=0?'up':'down'}">${totalPLPct>=0?'+':''}${totalPLPct.toFixed(2)}%</span></td>
+    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${totalPL>=0?'#00d4b8':'#ff6b6b'};">${totalPL>=0?'+':''}€${Math.abs(totalPL).toFixed(0)}</td>
+    <td colspan="4"></td>
+  </tr>`;
+  h += "</table></div>";
+  wrap.innerHTML = h;
+}
+
+// ── APRI POSIZIONE MANUALE ────────────────────────────────────────────
+window.openManualPosition = function() {
+  document.getElementById("modalOpenSimOverlay").classList.add("show");
+  // Popola select ticker dall'universo
+  const sel = document.getElementById("openSimTicker");
+  sel.innerHTML = simUniverse.map(t => `<option value="${t.ticker}">${t.ticker} — ${t.name}</option>`).join("");
+};
+
+document.getElementById("btnCancelOpenSim")?.addEventListener("click", () => {
+  document.getElementById("modalOpenSimOverlay").classList.remove("show");
+});
+
+document.getElementById("btnConfirmOpenSim")?.addEventListener("click", async () => {
+  const ticker = document.getElementById("openSimTicker").value;
+  const buyPrice = parseFloat(document.getElementById("openSimPrice").value);
+  const qty = parseInt(document.getElementById("openSimQty").value);
+  const profile = document.getElementById("openSimProfile").value;
+  const buyDate = document.getElementById("openSimDate").value || new Date().toISOString().slice(0,10);
+  if (!ticker || !buyPrice || !qty) { alert("Compila tutti i campi"); return; }
+
+  const u = simUniverse.find(x => x.ticker === ticker);
+  const pos = {
+    id: "simpos_" + Date.now() + "_" + ticker,
+    user_id: currentUser,
+    ticker, name: u?.name || ticker,
+    qty, buy_price: buyPrice, buy_date: buyDate,
+    currency: "EUR", sector: u?.sector || "Altro",
+    stop_loss: parseFloat((buyPrice * 0.93).toFixed(4)),
+    profile: SIM_PROFILES[profile]?.name || profile,
+    status: "open", current_price: buyPrice
+  };
+
+  await sbFetch("sim_positions?on_conflict=id", "POST", [pos]);
+  document.getElementById("modalOpenSimOverlay").classList.remove("show");
+  await loadAllData();
+  renderAll();
+  await sendTelegramBoth(`📥 <b>APERTURA SIMULATA — ${ticker}</b>\n\n📈 ${u?.name||ticker}\n💰 Prezzo: €${buyPrice.toFixed(2)}\n📦 Qty: ${qty}\n🛑 Stop: €${(buyPrice*0.93).toFixed(2)}\n📅 Data: ${buyDate}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+});
+
+// ── CHIUDI POSIZIONE ──────────────────────────────────────────────────
+window.openCloseSim = function(id) {
+  closingSimId = id;
+  const p = simPositions.find(x => x.id === id);
+  if (p) {
+    document.getElementById("closeSimPrice").value = p.current_price || p.buy_price;
+    document.getElementById("closeSimInfo").textContent = `${p.ticker} — Acq: €${parseFloat(p.buy_price).toFixed(2)} | Stop: €${p.stop_loss ? parseFloat(p.stop_loss).toFixed(2) : "--"}`;
+  }
+  document.getElementById("modalCloseSimOverlay").classList.add("show");
+};
+
+document.getElementById("btnCancelCloseSim").addEventListener("click", () => {
+  document.getElementById("modalCloseSimOverlay").classList.remove("show");
+});
+
+document.getElementById("btnConfirmCloseSim").addEventListener("click", async () => {
+  const p = simPositions.find(x => x.id === closingSimId);
+  if (!p) return;
+  const sellPrice = parseFloat(document.getElementById("closeSimPrice").value);
+  const reason = document.getElementById("closeSimReason").value;
+  if (!sellPrice) { alert("Inserisci il prezzo di vendita"); return; }
+
+  const plPct = ((sellPrice - p.buy_price) / p.buy_price * 100);
+  const plAbs = (sellPrice - p.buy_price) * p.qty;
+
+  await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{
+    status: "closed", sell_price: sellPrice,
+    sell_date: new Date().toISOString().slice(0, 10), sell_reason: reason
+  }]);
+
+  const icon = reason === "target" ? "🎯" : reason === "stop" ? "🛑" : reason === "rotazione" ? "🔄" : "✋";
+  await sendTelegramBoth(`${icon} <b>CHIUSURA SIMULATA — ${p.ticker}</b>\n\n📈 ${p.name||""}\n💰 €${parseFloat(p.buy_price).toFixed(2)} → €${sellPrice.toFixed(2)}\n📊 P&L: <b>${plPct>=0?'+':''}${plPct.toFixed(2)}% (${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)})</b>\n📝 ${reason}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+
+  document.getElementById("modalCloseSimOverlay").classList.remove("show");
+  await loadAllData();
+  renderAll();
+});
+
+// ── STORICO ───────────────────────────────────────────────────────────
+function renderClosedPositions() {
+  const wrap = document.getElementById("closedSimWrap");
+  if (!wrap) return;
+  if (closedSimPositions.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><p>Nessuna operazione chiusa</p></div>`;
+    return;
+  }
+  let h = `<div style="overflow-x:auto;"><table>
+    <tr><th>Ticker</th><th>Nome</th><th>Settore</th><th>Qty</th><th>Acq.</th><th>Vend.</th><th>P&L %</th><th>P&L €</th><th>Motivo</th><th>Data Vend.</th><th>Profilo</th></tr>`;
+  let totalPL = 0;
+  closedSimPositions.forEach(p => {
+    const pl = ((p.sell_price - p.buy_price) / p.buy_price * 100);
+    const plAbs = (p.sell_price - p.buy_price) * p.qty;
+    totalPL += plAbs;
+    const icons = {target:"🎯",stop:"🛑",rotazione:"🔄",manuale:"✋"};
+    h += `<tr>
+      <td><strong>${p.ticker}</strong></td>
+      <td style="font-size:11px;">${p.name||""}</td>
+      <td style="font-size:10px;color:var(--dim);">${p.sector||""}</td>
+      <td>${p.qty}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.buy_price).toFixed(2)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.sell_price).toFixed(2)}</td>
+      <td><span class="chip ${plAbs>=0?'up':'down'}">${pl>=0?'+':''}${pl.toFixed(2)}%</span></td>
+      <td style="font-weight:700;color:${plAbs>=0?'#00d4b8':'#ff6b6b'};">${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)}</td>
+      <td>${icons[p.sell_reason]||""} ${p.sell_reason||""}</td>
+      <td style="font-size:10px;color:var(--dim);">${p.sell_date||""}</td>
+      <td style="font-size:10px;color:var(--dim);">${p.profile||""}</td>
+    </tr>`;
+  });
+  h += `<tr style="border-top:2px solid var(--line);font-weight:700;">
+    <td colspan="7">TOTALE REALIZZATO</td>
+    <td style="color:${totalPL>=0?'#00d4b8':'#ff6b6b'};">${totalPL>=0?'+':''}€${Math.abs(totalPL).toFixed(0)}</td>
+    <td colspan="3"></td>
+  </tr>`;
+  h += "</table></div>";
+  wrap.innerHTML = h;
+}
+
+// ── STATISTICHE ───────────────────────────────────────────────────────
+function renderSimStats() {
+  const wrap = document.getElementById("simStatsWrap");
+  if (!wrap) return;
+  if (closedSimPositions.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><p>Chiudi operazioni per vedere le statistiche</p></div>`;
+    return;
+  }
+  const winners = closedSimPositions.filter(p => p.sell_price > p.buy_price);
+  const losers = closedSimPositions.filter(p => p.sell_price <= p.buy_price);
+  const totalPL = closedSimPositions.reduce((s, p) => s + (p.sell_price - p.buy_price) * p.qty, 0);
+  const totalGains = winners.reduce((s, p) => s + (p.sell_price - p.buy_price) * p.qty, 0);
+  const totalLosses = Math.abs(losers.reduce((s, p) => s + (p.sell_price - p.buy_price) * p.qty, 0));
+  const pf = totalLosses > 0 ? (totalGains / totalLosses).toFixed(2) : "∞";
+  const wr = (winners.length / closedSimPositions.length * 100).toFixed(1);
+  const avgWin = winners.length > 0 ? (totalGains / winners.length).toFixed(0) : 0;
+  const avgLoss = losers.length > 0 ? (totalLosses / losers.length).toFixed(0) : 0;
+  const best = closedSimPositions.reduce((a, b) => ((b.sell_price-b.buy_price)/b.buy_price) > ((a.sell_price-a.buy_price)/a.buy_price) ? b : a);
+  const worst = closedSimPositions.reduce((a, b) => ((b.sell_price-b.buy_price)/b.buy_price) < ((a.sell_price-a.buy_price)/a.buy_price) ? b : a);
+  const byReason = {};
+  closedSimPositions.forEach(p => { byReason[p.sell_reason] = (byReason[p.sell_reason] || 0) + 1; });
+
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;">
+      <div class="card"><div class="v" style="color:${totalPL>=0?'#00d4b8':'#ff6b6b'};">${totalPL>=0?'+':''}€${Math.abs(totalPL).toFixed(0)}</div><div class="l">P&L Realizzato</div></div>
+      <div class="card"><div class="v">${closedSimPositions.length}</div><div class="l">Trade Totali</div></div>
+      <div class="card"><div class="v" style="color:#00d4b8;">${winners.length}</div><div class="l">Vincenti</div></div>
+      <div class="card"><div class="v" style="color:#ff6b6b;">${losers.length}</div><div class="l">Perdenti</div></div>
+      <div class="card"><div class="v" style="color:${parseFloat(wr)>=50?'#00d4b8':'#ff6b6b'};">${wr}%</div><div class="l">Win Rate</div></div>
+      <div class="card"><div class="v" style="color:${parseFloat(pf)>=1?'#00d4b8':'#ff6b6b'};">${pf}</div><div class="l">Profit Factor</div></div>
+      <div class="card"><div class="v" style="color:#00d4b8;">+€${avgWin}</div><div class="l">Media Vincente</div></div>
+      <div class="card"><div class="v" style="color:#ff6b6b;">-€${avgLoss}</div><div class="l">Media Perdente</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div class="card"><div style="font-size:10px;color:var(--dim);margin-bottom:4px;">🏆 MIGLIOR TRADE</div><div style="font-weight:700;color:#00d4b8;">${best.ticker} +${((best.sell_price-best.buy_price)/best.buy_price*100).toFixed(1)}%</div><div style="font-size:10px;color:var(--dim);">${best.sell_date||""}</div></div>
+      <div class="card"><div style="font-size:10px;color:var(--dim);margin-bottom:4px;">📉 PEGGIOR TRADE</div><div style="font-weight:700;color:#ff6b6b;">${worst.ticker} ${((worst.sell_price-worst.buy_price)/worst.buy_price*100).toFixed(1)}%</div><div style="font-size:10px;color:var(--dim);">${worst.sell_date||""}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+      ${Object.entries(byReason).map(([r, n]) => {
+        const icons = {target:'🎯',stop:'🛑',rotazione:'🔄',manuale:'✋'};
+        return `<div class="card"><div class="v">${n}</div><div class="l">${icons[r]||''} ${r}</div></div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ── SIM CHART ─────────────────────────────────────────────────────────
+function renderSimChart() {
+  const ctx = document.getElementById("chartSimCapital");
+  if (!ctx) return;
+  const capital = parseFloat(document.getElementById("simCapital").value) || 20000;
+
+  // Build equity curve: start + closed trades sorted by date
+  const sorted = [...closedSimPositions].sort((a, b) => (a.sell_date||"").localeCompare(b.sell_date||""));
+  let equity = capital;
+  const labels = ["01/04/2025"], values = [capital];
+  sorted.forEach(p => {
+    equity += (p.sell_price - p.buy_price) * p.qty;
+    labels.push(p.sell_date||"");
+    values.push(parseFloat(equity.toFixed(0)));
+  });
+  // Add current value
+  let currentTotal = equity;
+  simPositions.forEach(p => { currentTotal += (p.current_price - p.buy_price) * p.qty; });
+  labels.push("Oggi");
+  values.push(parseFloat(currentTotal.toFixed(0)));
+
+  if (chartSimCapital) chartSimCapital.destroy();
+  chartSimCapital = new Chart(ctx.getContext("2d"), {
+    type: "line",
+    data: { labels, datasets: [{
+      label: "Capitale Simulato",
+      data: values,
+      borderColor: "#d4a017",
+      backgroundColor: "#d4a01722",
+      fill: true, tension: 0.3, pointRadius: 4,
+      pointBackgroundColor: "#d4a017"
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#eef1f7", font: { family: "JetBrains Mono", size: 10 } } } },
+      scales: {
+        x: { ticks: { color: "#7d8aa3", font: { size: 10 } }, grid: { color: "#1e2d45" } },
+        y: { ticks: { color: "#7d8aa3", font: { size: 10 }, callback: v => "€" + v.toLocaleString("it-IT") }, grid: { color: "#1e2d45" } }
+      }
+    }
+  });
+}
+
+// ── UNIVERSO ──────────────────────────────────────────────────────────
+function renderUniverse() {
+  const wrap = document.getElementById("universeWrap");
+  if (!wrap) return;
+  const count = document.getElementById("universeCount");
+  if (count) count.textContent = simUniverse.length + " titoli";
+  if (simUniverse.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="ic">📊</div><p>Importa il file Excel o carica il default</p></div>`;
+    return;
+  }
+  let h = `<div style="overflow-x:auto;"><table>
+    <tr><th>Ticker</th><th>Nome</th><th>Settore</th><th>P.Rif. 01/04</th><th>Prezzo Att.</th><th>Δ dal Ref.</th><th>Fair Value</th><th>Rialzo</th><th></th></tr>`;
+  simUniverse.forEach(t => {
+    const ref = t.buy_price_ref;
+    const cur = t.current_price_ref;
+    const delta = ref && cur ? ((cur - ref) / ref * 100) : null;
+    const deltaCol = delta >= 0 ? "#00d4b8" : "#ff6b6b";
+    const fvColors = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
+    const fvCol = fvColors[t.fair_value_label] || "#7d8aa3";
+    h += `<tr>
+      <td><strong>${t.ticker}</strong></td>
+      <td style="font-size:11px;">${t.name||""}</td>
+      <td style="font-size:10px;color:var(--dim);">${t.sector||""}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">${ref ? "€"+ref.toFixed(2) : "--"}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">${cur ? "€"+cur.toFixed(2) : "--"}</td>
+      <td style="color:${deltaCol};font-weight:700;">${delta!=null?(delta>=0?"+":"")+delta.toFixed(1)+"%":"--"}</td>
+      <td style="font-size:10px;font-weight:700;color:${fvCol};">${t.fair_value_label||"--"}</td>
+      <td style="font-size:11px;color:${t.analyst_upside>0?"#00d4b8":"#ff6b6b"};">${t.analyst_upside!=null?(t.analyst_upside>0?"+":"")+t.analyst_upside+"%":"--"}</td>
+      <td>
+        <button onclick="openManualFromUniverse('${t.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:700;">+ APRI</button>
+        <button onclick="removeFromUniverse('${t.id}')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:14px;margin-left:4px;">✕</button>
+      </td>
+    </tr>`;
+  });
+  h += "</table></div>";
+  wrap.innerHTML = h;
+}
+
+window.openManualFromUniverse = function(ticker) {
+  const t = simUniverse.find(x => x.ticker === ticker);
+  if (!t) return;
+  const sel = document.getElementById("openSimTicker");
+  const opt = Array.from(sel.options).find(o => o.value === ticker);
+  if (!opt) {
+    const newOpt = document.createElement("option");
+    newOpt.value = ticker;
+    newOpt.text = `${ticker} — ${t.name}`;
+    sel.appendChild(newOpt);
+  }
+  sel.value = ticker;
+  document.getElementById("openSimPrice").value = t.current_price_ref ? t.current_price_ref.toFixed(2) : "";
+  document.getElementById("modalOpenSimOverlay").classList.add("show");
+};
+
+window.removeFromUniverse = async function(id) {
+  if (!confirm("Rimuovere questo titolo?")) return;
+  await sbFetch(`sim_universe?id=eq.${id}`, "DELETE");
+  simUniverse = simUniverse.filter(t => t.id !== id);
+  renderUniverse();
+  renderHero();
+};
+
+// Import Excel
+document.getElementById("btnImportUniverse").addEventListener("click", () => {
+  document.getElementById("universeExcelInput").click();
+});
+
+document.getElementById("universeExcelInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const wb = XLSX.read(ev.target.result, { type: "binary" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      let headerRowIdx = 0, headerRow = [];
+      for (let i = 0; i < Math.min(data.length, 15); i++) {
+        const rowStr = (data[i]||[]).map(c => String(c||"").toLowerCase()).join(",");
+        if (rowStr.includes("ticker") || rowStr.includes("nome")) { headerRowIdx = i; headerRow = data[i]; break; }
+      }
+      const headers = headerRow.map(h => String(h||"").toLowerCase());
+      const iIdx = (name) => headers.findIndex(h => h.includes(name));
+      const colNome = iIdx("nome") !== -1 ? iIdx("nome") : 2;
+      const colTicker = iIdx("ticker") !== -1 ? iIdx("ticker") : 3;
+      const colFairLabel = iIdx("fair value");
+      const colAnalyst = iIdx("rialzo");
+      const colCash = iIdx("flusso di cassa");
+      const colPE = iIdx("prezzo/utile") !== -1 ? iIdx("prezzo/utile") : iIdx("p/e");
+      const colSector = iIdx("settore");
+
+      const rows = [];
+      for (const row of data.slice(headerRowIdx + 2)) {
+        if (!row || !row[colTicker]) continue;
+        const ticker = String(row[colTicker]).trim().toUpperCase();
+        if (!ticker) continue;
+        const analystRaw = colAnalyst !== -1 && row[colAnalyst] != null ? parseFloat((row[colAnalyst] * 100).toFixed(1)) : null;
+        rows.push({
+          id: `simuni_${ticker}_${currentUser}`,
+          user_id: currentUser, ticker,
+          name: row[colNome] || ticker,
+          sector: colSector !== -1 ? row[colSector] || "Altro" : "Altro",
+          pe: colPE !== -1 && row[colPE] != null ? parseFloat(row[colPE].toFixed(1)) : null,
+          fair_value_label: colFairLabel !== -1 ? row[colFairLabel] || null : null,
+          analyst_upside: analystRaw,
+          cash_flow_label: colCash !== -1 ? row[colCash] || null : null
+        });
+      }
+
+      if (rows.length === 0) { alert("Nessun titolo trovato."); return; }
+      await sbFetch("sim_universe?on_conflict=id", "POST", rows);
+      await loadAllData();
+      renderAll();
+      e.target.value = "";
+      // Aggiorna prezzi
+      setStatus("⏳ Aggiornamento prezzi universo...");
+      await refreshUniversePrices();
+      alert(`✅ ${rows.length} titoli importati.`);
+    } catch(err) { alert("Errore: " + err.message); }
+  };
+  reader.readAsBinaryString(file);
+});
+
+document.getElementById("btnClearUniverse").addEventListener("click", async () => {
+  if (!confirm("Vuoi eliminare tutti i titoli dall'universo?")) return;
+  await sbFetch(`sim_universe?user_id=eq.${currentUser}`, "DELETE");
+  simUniverse = [];
+  renderUniverse();
+  renderHero();
+});
+
+document.getElementById("btnLoadDefault")?.addEventListener("click", async () => {
+  if (!confirm("Caricare i 10 titoli MIB di default con prezzi al 1 Aprile 2025?")) return;
+  await loadDefaultUniverse();
+  await loadAllData();
+  renderAll();
+});
+
+// ── REFRESH PREZZI ────────────────────────────────────────────────────
+window.refreshSimPrices = async function() {
+  if (simPositions.length === 0) { setStatus("Nessuna posizione aperta."); return; }
+  setStatus("⏳ Aggiornamento prezzi...");
+  const updates = [];
+  for (const p of simPositions) {
+    try {
+      const data = await fetchYahoo(p.ticker, "1d", "1d");
+      const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (price) {
+        p.current_price = price;
+        updates.push({ id: p.id, current_price: price });
+        if (p.stop_loss && price <= p.stop_loss) {
+          await sendTelegramBoth(`🛑 <b>STOP LOSS SIMULATO — ${p.ticker}</b>\n\n💰 €${price.toFixed(2)} ≤ Stop €${parseFloat(p.stop_loss).toFixed(2)}\n⚠️ Considera di chiudere questa posizione!\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+        }
+      }
+      await new Promise(r => setTimeout(r, 400));
+    } catch(e) {}
+  }
+  if (updates.length > 0) {
+    await sbFetch("sim_positions?on_conflict=id", "POST", simPositions.map(p => ({ id: p.id, current_price: p.current_price })));
+  }
+  await refreshUniversePrices();
+  renderAll();
+  setStatus(`✅ Prezzi aggiornati — ${updates.length} posizioni`);
+};
+
+async function refreshUniversePrices() {
+  const updates = [];
+  for (const t of simUniverse) {
+    try {
+      const data = await fetchYahoo(t.ticker, "1d", "1d");
+      const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (price) {
+        t.current_price_ref = price;
+        updates.push({ id: t.id, current_price_ref: price });
+      }
+      await new Promise(r => setTimeout(r, 300));
+    } catch(e) {}
+  }
+  if (updates.length > 0) {
+    await sbFetch("sim_universe?on_conflict=id", "POST", updates);
+  }
+  renderUniverse();
+}
+
+// ── SIMULAZIONE AUTOMATICA ────────────────────────────────────────────
+window.runSimulation = async function() {
+  if (simUniverse.length < 5) {
+    alert("⚠ Aggiungi almeno 5 titoli nell'universo.");
+    switchTab("Universo"); return;
+  }
+  const profile = document.getElementById("simProfile").value;
+  const capital = parseFloat(document.getElementById("simCapital").value) || 20000;
+  const prof = SIM_PROFILES[profile];
+  setStatus(`⏳ Analisi ${simUniverse.length} titoli per ${prof.icon} ${prof.name}...`);
+
+  const scored = [];
+  for (const t of simUniverse) {
+    try {
+      const data = await fetchYahoo(t.ticker, "1y", "1d");
+      const result = data?.chart?.result?.[0];
+      const quote = result?.indicators?.quote?.[0] || {};
+      const closes = (quote.close || []).filter(v => v != null);
+      const highs = quote.high || [];
+      const lows = quote.low || [];
+      if (closes.length < 20) continue;
+      const sd = calcCompositeScore(closes, highs, lows, t);
+      const price = t.current_price_ref || result?.meta?.regularMarketPrice;
+      const low52 = result?.meta?.fiftyTwoWeekLow;
+      const dist52 = price && low52 ? ((price - low52) / low52 * 100) : null;
+      scored.push({ ...t, price, scoreData: sd, dist52, finalScore: sd.composite });
+      setStatus(`⏳ ${t.ticker}: Score ${sd.composite} (${scored.length}/${simUniverse.length})`);
+      await new Promise(r => setTimeout(r, 300));
+    } catch(e) { continue; }
+  }
+
+  scored.sort((a, b) => b.finalScore - a.finalScore);
+  lastRanking = scored;
+
+  const selected = selectByProfile(scored, prof);
+  const perTicker = capital / selected.length;
+  const today = new Date().toISOString().slice(0, 10);
+  const newPositions = [];
+
+  for (const s of selected) {
+    if (simPositions.find(p => p.ticker === s.ticker)) continue;
+    const price = s.price || s.current_price_ref;
+    const qty = price ? Math.floor(perTicker / price) : 1;
+    newPositions.push({
+      id: "simpos_" + Date.now() + "_" + s.ticker,
+      user_id: currentUser, ticker: s.ticker, name: s.name,
+      qty, buy_price: price, buy_date: today,
+      currency: "EUR", sector: s.sector || "Altro",
+      stop_loss: price ? parseFloat((price * 0.93).toFixed(4)) : null,
+      profile: prof.name, status: "open", current_price: price
+    });
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  if (newPositions.length > 0) await sbFetch("sim_positions?on_conflict=id", "POST", newPositions);
+
+  const currentTickers = simPositions.map(p => p.ticker);
+  const toSell = simPositions.filter(p => !selected.find(s => s.ticker === p.ticker));
+  const toAdd = selected.filter(s => !currentTickers.includes(s.ticker));
+  const toKeep = selected.filter(s => currentTickers.includes(s.ticker));
+
+  renderRanking(scored, selected);
+  renderRotationActions(toAdd, toSell, toKeep, prof, perTicker);
+
+  await sendTelegramBoth(`🔄 <b>SIMULAZIONE — ${prof.icon} ${prof.name}</b>\n\n💰 €${capital.toLocaleString("it-IT")} | ${simUniverse.length} titoli analizzati\n🟢 Apri: ${toAdd.length} | 🔴 Chiudi: ${toSell.length} | 🟡 Tieni: ${toKeep.length}\n🏆 Top 3: ${scored.slice(0,3).map(s=>s.ticker+"("+s.finalScore.toFixed(1)+")").join(", ")}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+
+  await loadAllData();
+  renderAll();
+  setStatus(`✅ Analisi completata — ${newPositions.length} nuove posizioni su ${scored.length} titoli`);
+  switchTab("Classifica");
+};
+
+function selectByProfile(scored, prof) {
+  const sel = [], sc = {};
+  const total = Object.values(prof.weights).reduce((s,v)=>s+v,0);
+  const slots = {};
+  Object.entries(prof.weights).forEach(([sec,pct]) => { slots[sec] = Math.max(1,Math.round((pct/total)*prof.n)); });
+  for (const s of scored) {
+    const sec = s.sector || "Altro";
+    const match = Object.keys(slots).find(k => sec.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(sec.toLowerCase()));
+    if (match && (sc[match]||0) < slots[match]) { sel.push(s); sc[match]=(sc[match]||0)+1; }
+    if (sel.length >= prof.n) break;
+  }
+  for (const s of scored) {
+    if (sel.length >= prof.n) break;
+    if (!sel.find(x=>x.ticker===s.ticker)) sel.push(s);
+  }
+  return sel.slice(0, prof.n);
+}
+
+function renderRanking(scored, selected) {
+  const wrap = document.getElementById("rankingWrap");
+  if (!wrap) return;
+  let h = `<div style="overflow-x:auto;"><table>
+    <tr><th>#</th><th>Ticker</th><th>Score</th><th>Tecnico</th><th>RSI</th><th>+Min 52W</th><th>Fair Value</th><th>Rialzo</th><th>Stato</th></tr>`;
+  scored.forEach((s, i) => {
+    const inSel = selected.find(x => x.ticker === s.ticker);
+    const sc = s.finalScore;
+    const scCol = sc>=7?"#00d4b8":sc>=5?"#80ed99":sc>=3?"#ffd23f":"#ff6b6b";
+    const tCol = s.scoreData?.techColor||"#7d8aa3";
+    const fvC = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
+    h += `<tr style="${inSel?'background:#d4a01710;':''}">
+      <td style="color:var(--dim);">${i+1}</td>
+      <td><strong>${s.ticker}</strong><div style="font-size:10px;color:var(--dim)">${s.name||""}</div></td>
+      <td><span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:16px;color:${scCol};">${sc.toFixed(1)}</span></td>
+      <td><span style="font-size:10px;font-weight:700;color:${tCol};background:${tCol}22;padding:2px 8px;border-radius:6px;">${s.scoreData?.techRating||"--"}</span></td>
+      <td style="color:${s.scoreData?.rsi>70?'#ff7700':s.scoreData?.rsi<30?'#00d4b8':'var(--dim)'};">${s.scoreData?.rsi?.toFixed(0)||"--"}</td>
+      <td style="color:var(--dim);font-size:11px;">${s.dist52!=null?"+"+s.dist52.toFixed(0)+"%":"--"}</td>
+      <td style="font-size:10px;font-weight:700;color:${fvC[s.fair_value_label]||'#7d8aa3'};">${s.fair_value_label||"--"}</td>
+      <td style="color:${s.analyst_upside>0?'#00d4b8':'#ff6b6b'};font-size:11px;">${s.analyst_upside!=null?(s.analyst_upside>0?"+":"")+s.analyst_upside+"%":"--"}</td>
+      <td>${inSel?'<span style="color:#00d4b8;font-weight:700;">✅ IN SIM</span>':'<button onclick="openManualFromUniverse(\''+s.ticker+'\')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;">+ APRI</button>'}</td>
+    </tr>`;
+  });
+  h += "</table></div>";
+  wrap.innerHTML = h;
+}
+
+function renderRotationActions(toAdd, toSell, toKeep, prof, perTicker) {
+  const panel = document.getElementById("rotationPanel");
+  const wrap = document.getElementById("rotationWrap");
+  if (!panel||!wrap) return;
+  panel.style.display = "block";
+  let h = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:12px;">`;
+  if (toAdd.length>0) h += `<div class="action-card buy"><div style="font-weight:700;color:#00d4b8;margin-bottom:8px;">🟢 APRI POSIZIONI (${toAdd.length})</div>${toAdd.map(s=>`<div style="padding:4px 0;font-size:12px;"><strong>${s.ticker}</strong> ${s.name||""}<div style="font-size:10px;color:var(--dim);">€${perTicker.toFixed(0)} | Score: ${s.finalScore.toFixed(1)} | Stop: €${s.price?(s.price*0.93).toFixed(2):"--"}</div></div>`).join("")}</div>`;
+  if (toSell.length>0) h += `<div class="action-card sell"><div style="font-weight:700;color:#ff6b6b;margin-bottom:8px;">🔴 CHIUDI POSIZIONI (${toSell.length})</div>${toSell.map(p=>`<div style="padding:4px 0;font-size:12px;display:flex;align-items:center;gap:8px;"><strong>${p.ticker}</strong><button onclick="openCloseSim('${p.id}')" style="background:#ff6b6b;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;">CHIUDI</button></div>`).join("")}</div>`;
+  if (toKeep.length>0) h += `<div class="action-card hold"><div style="font-weight:700;color:#ffd23f;margin-bottom:8px;">🟡 MANTIENI (${toKeep.length})</div>${toKeep.map(s=>`<div style="padding:4px 0;font-size:12px;"><strong>${s.ticker}</strong> — Score: ${s.finalScore.toFixed(1)}</div>`).join("")}</div>`;
+  h += `</div><div style="font-size:11px;color:#ff6b6b;background:#ff6b6b11;padding:10px;border-radius:8px;">🛑 <strong>STOP LOSS -7%</strong>: Chiudi ogni posizione che scende del 7% dal prezzo di acquisto. Alert Telegram automatico.</div>`;
+  wrap.innerHTML = h;
+}
+
+// ── TECH INDICATORS ───────────────────────────────────────────────────
+function calcSMA(c,p){if(c.length<p)return null;return c.slice(-p).reduce((a,b)=>a+b,0)/p;}
+function calcEMA(c,p){if(c.length<p)return null;const k=2/(p+1);let e=c.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=p;i<c.length;i++)e=c[i]*k+e*(1-k);return e;}
+function calcMACD(c){if(c.length<26)return{macd:null,signal:null};const e12=calcEMA(c,12),e26=calcEMA(c,26),macd=e12-e26;const mv=[];for(let i=26;i<=c.length;i++){const a=calcEMA(c.slice(0,i),12),b=calcEMA(c.slice(0,i),26);if(a&&b)mv.push(a-b);}return{macd,signal:mv.length>=9?calcEMA(mv,9):null};}
+function calcRSI(c,p=14){if(c.length<p+1)return null;const r=c.slice(-(p+1));let g=0,l=0;for(let i=1;i<r.length;i++){const d=r[i]-r[i-1];if(d>0)g+=d;else l-=d;}const ag=g/p,al=l/p;if(al===0)return 100;return 100-(100/(1+ag/al));}
+function calcIchimoku(c,h,l){if(!h||!l||c.length<52)return{aboveKumo:null,tenkanAboveKijun:null};const hi=(a,n)=>Math.max(...a.slice(-n)),lo=(a,n)=>Math.min(...a.slice(-n));const tk=(hi(h,9)+lo(l,9))/2,kj=(hi(h,26)+lo(l,26))/2,sA=(tk+kj)/2,sB=(hi(h,52)+lo(l,52))/2;const pr=c[c.length-1];return{aboveKumo:pr>Math.max(sA,sB),belowKumo:pr<Math.min(sA,sB),tenkanAboveKijun:tk>kj};}
+function calcCompositeScore(c,h,l,fd={}){
+  const pr=c[c.length-1],s50=calcSMA(c,50),s200=calcSMA(c,200),rsi=calcRSI(c,14);
+  const{macd,signal}=calcMACD(c),ich=calcIchimoku(c,h,l);
+  let ts=0;
+  if(s50)ts+=pr>s50?1:-1;if(s200)ts+=pr>s200?1:-1;if(s50&&s200)ts+=s50>s200?1:-1;
+  if(rsi)ts+=rsi>50?1:rsi<30?1:-1;if(macd&&signal)ts+=macd>signal?1:-1;
+  if(ich.aboveKumo!==null)ts+=ich.aboveKumo?1:ich.belowKumo?-1:0;
+  if(ich.tenkanAboveKijun!==null)ts+=ich.tenkanAboveKijun?1:-1;
+  const tn=((ts+7)/14)*10;
+  let fs=5;
+  const fv=fd.fair_value_label||fd.fairValueLabel;
+  const au=fd.analyst_upside||fd.analystUpside;
+  const pe=fd.pe;
+  const cf=fd.cash_flow_label||fd.cashFlowLabel;
+  if(fv==="Sottovalutato")fs+=2;else if(fv==="Moderatamente sottovalutato")fs+=1;else if(fv==="Sopravvalutato")fs-=2;else if(fv==="Moderatamente sopravvalutato")fs-=1;
+  if(au>30)fs+=2;else if(au>15)fs+=1;else if(au<0)fs-=1;
+  if(pe&&pe<15)fs+=1;else if(pe&&pe>30)fs-=1;
+  if(cf==="Eccellente"||cf==="Ottima")fs+=1;else if(cf==="Debole")fs-=1;
+  fs=Math.max(0,Math.min(10,fs));
+  const comp=parseFloat((tn*0.6+fs*0.4).toFixed(1));
+  const tr=ts>=5?"Strong Buy":ts>=2?"Buy":ts>=-1?"Neutral":ts>=-4?"Sell":"Strong Sell";
+  const tc=ts>=5?"#00d4b8":ts>=2?"#80ed99":ts>=-1?"#ffd23f":ts>=-4?"#ff9f1c":"#ff6b6b";
+  return{composite:comp,techScore:ts,techRating:tr,techColor:tc,rsi,sma50:s50,sma200:s200};
+}
+
+// ── TELEGRAM ──────────────────────────────────────────────────────────
+async function sendTelegramBoth(message) {
+  try {
+    await Promise.all([
+      fetch("/.netlify/functions/telegram",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:"fabrizio",message})}),
+      fetch("/.netlify/functions/telegram",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:"jonathan",message})})
+    ]);
+  } catch(e) {}
+}
+
+window.loadRanking = function() {
+  if (lastRanking.length === 0) { document.getElementById("rankingWrap").innerHTML = `<div class="empty-state"><p>Esegui una simulazione per vedere la classifica</p></div>`; return; }
+  renderRanking(lastRanking, simPositions.map(p=>({ticker:p.ticker})));
+};
+
+</script>
+</body>
+</html>
