@@ -827,26 +827,34 @@ document.getElementById("universeExcelInput").addEventListener("change", async (
       }
       const headers = headerRow.map(h => String(h||"").toLowerCase());
       const iIdx = (name) => headers.findIndex(h => h.includes(name));
-      const colNome = iIdx("nome") !== -1 ? iIdx("nome") : 2;
-      const colTicker = iIdx("ticker") !== -1 ? iIdx("ticker") : 3;
-      const colFairLabel = iIdx("fair value");
-      const colAnalyst = iIdx("rialzo");
-      const colCash = iIdx("flusso di cassa");
-      const colPE = iIdx("prezzo/utile") !== -1 ? iIdx("prezzo/utile") : iIdx("p/e");
-      const colSector = iIdx("settore");
+      // Colonne file: A=Nome, B=Full Ticker, C=Ticker, F=Cash Flow, G=Rialzo, H=Fair Value, L=MktCap, R=P/E
+      const colNome = iIdx("nome") !== -1 ? iIdx("nome") : 0;
+      // Preferisci "Full Ticker" (col B) che ha formato NOME.MI
+      const colTicker = iIdx("full ticker") !== -1 ? iIdx("full ticker") : (iIdx("ticker") !== -1 ? iIdx("ticker") : 1);
+      const colFairLabel = iIdx("fair value") !== -1 ? iIdx("fair value") : 7;
+      const colAnalyst = iIdx("rialzo") !== -1 ? iIdx("rialzo") : 6;
+      const colCash = iIdx("flusso di cassa") !== -1 ? iIdx("flusso di cassa") : 5;
+      const colPE = iIdx("prezzo/utile") !== -1 ? iIdx("prezzo/utile") : (iIdx("p/e") !== -1 ? iIdx("p/e") : 17);
+      const colSector = iIdx("settore") !== -1 ? iIdx("settore") : -1;
+      const colMktCap = iIdx("capitaliz") !== -1 ? iIdx("capitaliz") : 11;
 
       const rows = [];
-      for (const row of data.slice(headerRowIdx + 2)) {
-        if (!row || !row[colTicker]) continue;
-        const ticker = String(row[colTicker]).trim().toUpperCase();
-        if (!ticker) continue;
-        const analystRaw = colAnalyst !== -1 && row[colAnalyst] != null ? parseFloat((row[colAnalyst] * 100).toFixed(1)) : null;
+      for (const row of data.slice(headerRowIdx + 1)) {
+        if (!row) continue;
+        const rawTicker = row[colTicker];
+        if (!rawTicker || String(rawTicker).trim() === "") continue;
+        const ticker = String(rawTicker).trim().toUpperCase();
+        const analystRaw = colAnalyst !== -1 && row[colAnalyst] != null
+          ? parseFloat((parseFloat(row[colAnalyst]) * (parseFloat(row[colAnalyst]) < 1 ? 100 : 1)).toFixed(1)) : null;
+        const peRaw = colPE !== -1 && row[colPE] != null ? parseFloat(parseFloat(row[colPE]).toFixed(1)) : null;
+        const mktCapRaw = colMktCap !== -1 && row[colMktCap] != null ? parseFloat((parseFloat(row[colMktCap])/1e9).toFixed(2)) : null;
         rows.push({
           id: `simuni_${ticker}_${currentUser}`,
           user_id: currentUser, ticker,
           name: row[colNome] || ticker,
-          sector: colSector !== -1 ? row[colSector] || "Altro" : "Altro",
-          pe: colPE !== -1 && row[colPE] != null ? parseFloat(row[colPE].toFixed(1)) : null,
+          sector: colSector !== -1 && row[colSector] ? String(row[colSector]) : "Altro",
+          pe: peRaw,
+          market_cap: mktCapRaw,
           fair_value_label: colFairLabel !== -1 ? row[colFairLabel] || null : null,
           analyst_upside: analystRaw,
           cash_flow_label: colCash !== -1 ? row[colCash] || null : null
@@ -950,7 +958,7 @@ window.runSimulation = async function() {
       const lows = quote.low || [];
       if (closes.length < 20) continue;
       const sd = calcCompositeScore(closes, highs, lows, t);
-      const price = t.current_price_ref || result?.meta?.regularMarketPrice;
+      const price = result?.meta?.regularMarketPrice || t.current_price_ref;
       const low52 = result?.meta?.fiftyTwoWeekLow;
       const dist52 = price && low52 ? ((price - low52) / low52 * 100) : null;
       scored.push({ ...t, price, scoreData: sd, dist52, finalScore: sd.composite });
