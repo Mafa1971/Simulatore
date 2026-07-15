@@ -423,7 +423,7 @@ async function loadDefaultTickers() {
       current_price_ref: currentPrice ? parseFloat(currentPrice.toFixed(4)) : null
     };
     rows.push(row);
-    try { await sbFetch("sim_universe?on_conflict=id", "POST", [row]); } catch(e) {}
+    try { await sbFetch("sim_universe","POST",[row]); } catch(e) { try { await sbFetch(`sim_universe?id=eq.${row.id}`,"PATCH",[{buy_price_ref:row.buy_price_ref,current_price_ref:row.current_price_ref}],true); } catch(e2){} }
     await new Promise(r => setTimeout(r, 500));
   }
   watchlist = rows;
@@ -811,7 +811,7 @@ document.getElementById("btnConfirmBuy")?.addEventListener("click", async () => 
   };
   if (w?.score) pos.score = w.score;
   try {
-    await sbFetch("sim_positions?on_conflict=id", "POST", [pos]);
+    await sbFetch("sim_positions", "POST", [pos]);
     document.getElementById("modalBuyOverlay").classList.remove("show");
     await loadAllData();
     renderAll();
@@ -874,7 +874,7 @@ window.runAnalysis = async function() {
       w.techRating = sd.techRating;
       w.techColor = sd.techColor;
       // Save updated watchlist item
-      try { await sbFetch("sim_universe?on_conflict=id", "POST", [{...w, rsi: sd.rsi, score: sd.composite, current_price_ref: price||w.current_price_ref}], true); } catch(e) {}
+      try { await sbFetch("sim_universe?on_conflict=id", "POST", [{id:w.id, user_id:currentUser, ticker:w.ticker, rsi: sd.rsi, score: sd.composite, current_price_ref: price||w.current_price_ref}], true); } catch(e) {}
       scored.push({...w, finalScore: sd.composite, techRating: sd.techRating, techColor: sd.techColor, rsi: sd.rsi});
       setStatus(`⏳ ${w.ticker}: Score ${sd.composite} (${scored.length}/${watchlist.length})`);
       await new Promise(r=>setTimeout(r,300));
@@ -906,7 +906,7 @@ window.refreshPrices = async function() {
       const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
       if (price) {
         p.current_price = price;
-        await sbFetch("sim_positions?on_conflict=id","POST",[{id:p.id,current_price:price}]);
+        try { await sbFetch(`sim_positions?id=eq.${p.id}`,"PATCH",[{current_price:price}],true); } catch(e) {}
         if (p.stop_loss && price <= p.stop_loss) {
           await sendTG(`🛑 <b>STOP LOSS SIMULATO — ${p.ticker}</b>\n\n€${price.toFixed(2)} ≤ Stop €${parseFloat(p.stop_loss).toFixed(2)}\n⚠️ Chiudi questa posizione!\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
         }
@@ -918,7 +918,7 @@ window.refreshPrices = async function() {
     try {
       const data = await fetchYahoo(w.ticker,"1d","1d");
       const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (price) { w.current_price_ref = price; try { await sbFetch("sim_universe?on_conflict=id","POST",[{id:w.id,current_price_ref:price}],true); } catch(e){} }
+      if (price) { w.current_price_ref = price; try { await sbFetch("sim_universe?on_conflict=id","POST",[{id:w.id,user_id:currentUser,ticker:w.ticker,current_price_ref:price}],true); } catch(e){} }
       await new Promise(r=>setTimeout(r,300));
     } catch(e) {}
   }
@@ -994,7 +994,7 @@ document.getElementById("wlExcelInput")?.addEventListener("change", async (e) =>
           existing.analyst_upside = analystRaw||existing.analyst_upside;
           existing.cash_flow_label = colCash!==-1?row[colCash]||existing.cash_flow_label:existing.cash_flow_label;
           existing.pe = colPE!==-1&&row[colPE]!=null?parseFloat(parseFloat(row[colPE]).toFixed(1)):existing.pe;
-          try { await sbFetch("sim_universe?on_conflict=id","POST",[existing]); } catch(e) {}
+          try { await sbFetch(`sim_universe?id=eq.${existing.id}`,"PATCH",[{fair_value_label:existing.fair_value_label,analyst_upside:existing.analyst_upside,cash_flow_label:existing.cash_flow_label,pe:existing.pe}],true); } catch(e) {}
           updated++;
         } else {
           const newRow = {
@@ -1008,7 +1008,7 @@ document.getElementById("wlExcelInput")?.addEventListener("change", async (e) =>
             cash_flow_label: colCash!==-1?row[colCash]||null:null,
             currency: "EUR"
           };
-          try { await sbFetch("sim_universe?on_conflict=id","POST",[newRow]); watchlist.push(newRow); added++; } catch(e) { skipped++; }
+          try { await sbFetch("sim_universe","POST",[newRow]); watchlist.push(newRow); added++; } catch(e) { console.error(e); skipped++; }
         }
       }
 
@@ -1160,7 +1160,7 @@ document.getElementById("posExcelInput")?.addEventListener("change", async (e) =
       if (rows.length === 0) { alert("Nessuna posizione trovata nel file."); return; }
 
       for (const pos of rows) {
-        try { await sbFetch("sim_positions?on_conflict=id", "POST", [pos]); } catch(er) { console.error(er); }
+        try { await sbFetch("sim_positions", "POST", [pos]); } catch(er) { console.error(er); }
       }
 
       e.target.value = "";
