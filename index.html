@@ -125,6 +125,10 @@ a{color:var(--blue);text-decoration:none;}
           <button class="btn ghost" onclick="refreshPrices()" style="font-size:10px;">↻ PREZZI</button>
         </div>
         <div style="font-size:11px;color:var(--dim);">Simulazione dal <strong style="color:var(--gold);">1 Aprile 2025</strong> • Stop Loss: <strong style="color:var(--red);">-7%</strong> • Revisione mensile</div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn primary" id="btnImportPos">📥 IMPORTA POSIZIONI EXCEL</button>
+          <input type="file" id="posExcelInput" accept=".xlsx,.xls" style="display:none;">
+        </div>
         <div id="simStatus" style="margin-top:8px;font-size:11px;color:var(--gold);min-height:16px;"></div>
       </div>
 
@@ -799,9 +803,9 @@ document.getElementById("btnConfirmBuy")?.addEventListener("click", async () => 
     currency: "EUR", sector: w?.sector||"Altro",
     stop_loss: parseFloat((buyPrice*0.93).toFixed(4)),
     profile: SIM_PROFILES[profile]?.name||profile,
-    status: "open", current_price: buyPrice,
-    score: w?.score||null
+    status: "open", current_price: buyPrice
   };
+  if (w?.score) pos.score = w.score;
   try {
     await sbFetch("sim_positions?on_conflict=id", "POST", [pos]);
     document.getElementById("modalBuyOverlay").classList.remove("show");
@@ -1060,6 +1064,103 @@ function selectByProfile(scored, prof) {
   for(const s of scored){if(sel.length>=prof.n)break;if(!sel.find(x=>x.ticker===s.ticker))sel.push(s);}
   return sel.slice(0,prof.n);
 }
+
+
+// ── IMPORT POSIZIONI DA EXCEL ─────────────────────────────────────────
+document.getElementById("btnImportPos")?.addEventListener("click", () => { 
+  document.getElementById("posExcelInput").click(); 
+});
+
+document.getElementById("posExcelInput")?.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const wb = XLSX.read(ev.target.result, {type:"binary"});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, {header:1});
+
+      // Find header row
+      let headerRowIdx = 0, headerRow = [];
+      for (let i = 0; i < Math.min(data.length, 10); i++) {
+        const rowStr = (data[i]||[]).map(c=>String(c||"").toLowerCase()).join(",");
+        if (rowStr.includes("ticker") || rowStr.includes("data")) { headerRowIdx = i; headerRow = data[i]; break; }
+      }
+      const headers = headerRow.map(h => String(h||"").toLowerCase().trim());
+      const iIdx = name => headers.findIndex(h => h.includes(name));
+
+      // Colonne: DATA - TICKER - TITOLO - SETTORE - AZ.(QTÀ) - PREZZO CARICO - CAPITALE INVESTITO
+      const colData    = iIdx("data") !== -1 ? iIdx("data") : 0;
+      const colTicker  = iIdx("ticker") !== -1 ? iIdx("ticker") : 1;
+      const colNome    = iIdx("titolo") !== -1 ? iIdx("titolo") : (iIdx("nome") !== -1 ? iIdx("nome") : 2);
+      const colSector  = iIdx("settore") !== -1 ? iIdx("settore") : 3;
+      const colQty     = iIdx("az") !== -1 ? iIdx("az") : (iIdx("qt") !== -1 ? iIdx("qt") : 4);
+      const colPrice   = iIdx("prezzo") !== -1 ? iIdx("prezzo") : 5;
+
+      const rows = [];
+      for (const row of data.slice(headerRowIdx + 1)) {
+        if (!row || !row[colTicker]) continue;
+        const ticker = String(row[colTicker]).trim().toUpperCase();
+        if (!ticker || ticker.length < 2) continue;
+
+        // Check if already open
+        const existing = simPositions.find(p => p.ticker === ticker && p.status === "open");
+        if (existing) {
+          if (!confirm(`${ticker} è già in portafoglio. Sostituire?`)) continue;
+          await sbFetch(`sim_positions?id=eq.${existing.id}`, "DELETE");
+        }
+
+        // Parse date
+        let buyDate = "2025-04-01";
+        if (row[colData]) {
+          if (typeof row[colData] === "number") {
+            // Excel serial date
+            const d = new Date((row[colData] - 25569) * 86400 * 1000);
+            buyDate = d.toISOString().slice(0,10);
+          } else {
+            const parts = String(row[colData]).split(/[\/\-]/);
+            if (parts.length === 3) {
+              const [d, m, y] = parts;
+              buyDate = `${y.length===4?y:"20"+y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
+            }
+          }
+        }
+
+        const qty = parseInt(row[colQty]) || 1;
+        const buyPrice = parseFloat(String(row[colPrice]||"0").replace(",",".")) || 0;
+        if (!buyPrice) continue;
+
+        const w = watchlist.find(x => x.ticker === ticker);
+        rows.push({
+          id: "simpos_" + Date.now() + "_" + ticker + "_" + Math.random().toString(36).slice(2,6),
+          user_id: currentUser,
+          ticker, qty, buy_price: buyPrice, buy_date: buyDate,
+          name: row[colNome] || w?.name || ticker,
+          sector: row[colSector] || w?.sector || "Altro",
+          currency: "EUR",
+          stop_loss: parseFloat((buyPrice * 0.93).toFixed(4)),
+          profile: SIM_PROFILES[document.getElementById("simProfile")?.value||"bilanciato"]?.name || "Bilanciato",
+          status: "open",
+          current_price: w?.current_price_ref || buyPrice
+        });
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      if (rows.length === 0) { alert("Nessuna posizione trovata nel file."); return; }
+
+      for (const pos of rows) {
+        try { await sbFetch("sim_positions?on_conflict=id", "POST", [pos]); } catch(er) { console.error(er); }
+      }
+
+      e.target.value = "";
+      await loadAllData();
+      renderAll();
+      alert(`✅ Importate ${rows.length} posizioni dal file Excel.`);
+    } catch(err) { alert("Errore import: " + err.message); }
+  };
+  reader.readAsBinaryString(file);
+});
 
 // ── TELEGRAM ──────────────────────────────────────────────────────────
 async function sendTG(message) {
