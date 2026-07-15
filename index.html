@@ -293,7 +293,7 @@ let closingId = null;
 let chartEquity = null;
 
 // ── SUPABASE ──────────────────────────────────────────────────────────
-async function sbFetch(path, method="GET", body=null) {
+async function sbFetch(path, method="GET", body=null, silent=false) {
   const opts = {
     method,
     headers: {
@@ -306,7 +306,10 @@ async function sbFetch(path, method="GET", body=null) {
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(SUPA_URL + "/rest/v1/" + path, opts);
   const text = await res.text();
-  if (!res.ok) throw new Error(text);
+  if (!res.ok) {
+    if (silent) return null;
+    throw new Error(text);
+  }
   return text ? JSON.parse(text) : [];
 }
 
@@ -871,7 +874,7 @@ window.runAnalysis = async function() {
       w.techRating = sd.techRating;
       w.techColor = sd.techColor;
       // Save updated watchlist item
-      try { await sbFetch("sim_universe?on_conflict=id", "POST", [{...w, rsi: sd.rsi, score: sd.composite, current_price_ref: price||w.current_price_ref}]); } catch(e) {}
+      try { await sbFetch("sim_universe?on_conflict=id", "POST", [{...w, rsi: sd.rsi, score: sd.composite, current_price_ref: price||w.current_price_ref}], true); } catch(e) {}
       scored.push({...w, finalScore: sd.composite, techRating: sd.techRating, techColor: sd.techColor, rsi: sd.rsi});
       setStatus(`⏳ ${w.ticker}: Score ${sd.composite} (${scored.length}/${watchlist.length})`);
       await new Promise(r=>setTimeout(r,300));
@@ -915,7 +918,7 @@ window.refreshPrices = async function() {
     try {
       const data = await fetchYahoo(w.ticker,"1d","1d");
       const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (price) { w.current_price_ref = price; await sbFetch("sim_universe?on_conflict=id","POST",[{id:w.id,current_price_ref:price}]); }
+      if (price) { w.current_price_ref = price; try { await sbFetch("sim_universe?on_conflict=id","POST",[{id:w.id,current_price_ref:price}],true); } catch(e){} }
       await new Promise(r=>setTimeout(r,300));
     } catch(e) {}
   }
