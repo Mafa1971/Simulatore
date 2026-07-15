@@ -3,37 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FMP Trading — Simulatore Rotazionale</title>
+<title>FMP — Simulatore Rotazionale</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#070d1a;--panel:#111827;--panel2:#1a2030;--line:#1e2d45;--txt:#eef1f7;--dim:#7d8aa3;--gold:#d4a017;--gold2:#f0c040;--green:#00d4b8;--red:#ff6b6b;--blue:#4fa3ff;}
-body{background:var(--bg);color:var(--txt);font-family:'Manrope',sans-serif;font-size:14px;min-height:100vh;}
+body{background:var(--bg);color:var(--txt);font-family:'Manrope',sans-serif;font-size:14px;}
 #loginScreen{display:flex;position:fixed;inset:0;background:var(--bg);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
-.logo{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.sub-label{font-size:10px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;}
+.logo{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .lcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:28px;width:100%;max-width:340px;}
 .lcard label{display:block;font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;}
 .lcard select,.lcard input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:11px 14px;font-family:'Manrope',sans-serif;font-size:13px;border-radius:8px;outline:none;margin-bottom:14px;box-sizing:border-box;}
 .btn-login{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#111;border:none;padding:12px;border-radius:10px;font-family:'Manrope',sans-serif;font-weight:800;font-size:13px;cursor:pointer;}
 .err{font-size:11px;color:var(--red);text-align:center;min-height:16px;margin-top:6px;}
 #appContent{display:none;}
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;gap:10px;flex-wrap:wrap;}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;flex-wrap:wrap;gap:8px;}
 .hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .btn{padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);cursor:pointer;font-family:'Manrope',sans-serif;font-size:11px;font-weight:700;}
 .btn.primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#111;border:none;}
 .btn.success{background:#00d4b822;color:#00d4b8;border-color:#00d4b844;}
 .btn.danger{background:#ff6b6b22;color:#ff6b6b;border-color:#ff6b6b44;}
 .btn.ghost{background:transparent;}
-.badge{padding:4px 10px;border-radius:6px;font-size:9px;font-weight:700;letter-spacing:1px;background:var(--panel2);color:var(--dim);border:1px solid var(--line);}
 main{padding:16px 20px;max-width:1400px;margin:0 auto;}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;}
 .panel-title{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px;}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;}
-.card .v{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;line-height:1;margin-bottom:3px;}
+.card .v{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;line-height:1;margin-bottom:3px;}
 .card .l{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;}
 table{width:100%;border-collapse:collapse;}
 th{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;padding:7px 8px;text-align:left;border-bottom:1px solid var(--line);}
@@ -44,19 +42,19 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
 .tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);display:flex;z-index:100;}
 .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 4px;background:none;border:none;color:var(--dim);cursor:pointer;font-family:'Manrope',sans-serif;gap:2px;}
 .tab-btn.active{color:var(--gold);}
-.tab-icon{font-size:17px;}
+.tab-icon{font-size:16px;}
 .tab-label{font-size:9px;font-weight:600;text-transform:uppercase;}
 .tab-content{display:none;padding-bottom:75px;}
 .tab-content.active{display:block;}
 .modal-overlay{display:none;position:fixed;inset:0;background:#000b;z-index:200;align-items:center;justify-content:center;}
 .modal-overlay.show{display:flex;}
 .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;}
-.modal h3{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:18px;}
+.modal h3{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:16px;}
 .fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
 .fg label{font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;}
 .fg input,.fg select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:9px 12px;font-family:'Manrope',sans-serif;font-size:13px;border-radius:8px;outline:none;}
 .empty-state{text-align:center;padding:36px 20px;color:var(--dim);}
-.empty-state .ic{font-size:30px;margin-bottom:10px;}
+.empty-state .ic{font-size:28px;margin-bottom:8px;}
 .empty-state p{font-size:11px;letter-spacing:1px;text-transform:uppercase;}
 .action-card{border-radius:10px;padding:12px;margin-bottom:8px;}
 .action-card.buy{background:#00d4b811;border:1px solid #00d4b844;}
@@ -66,8 +64,10 @@ a{color:var(--blue);text-decoration:none;}
 </style>
 </head>
 <body>
+
+<!-- LOGIN -->
 <div id="loginScreen">
-  <div style="text-align:center;"><div class="logo">FMP TRADING</div><div class="sub-label">Simulatore Rotazionale</div></div>
+  <div style="text-align:center;"><div class="logo">FMP TRADING</div><div style="font-size:10px;color:var(--dim);letter-spacing:3px;margin-top:4px;">SIMULATORE ROTAZIONALE</div></div>
   <div class="lcard">
     <label>Utente</label>
     <select id="loginUser"><option value="fabrizio">Fabrizio</option><option value="jonathan">Jonathan</option></select>
@@ -78,14 +78,16 @@ a{color:var(--blue);text-decoration:none;}
   </div>
 </div>
 
+<!-- APP -->
 <div id="appContent">
   <header class="hdr">
     <div>
-      <div class="logo" style="font-size:18px;">🔄 SIMULATORE</div>
-      <div class="sub-label" id="userBadge" style="margin-top:2px;"></div>
+      <div class="logo" style="font-size:17px;">🔄 SIMULATORE ROTAZIONALE</div>
+      <div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-top:2px;" id="userBadge"></div>
     </div>
     <div class="hdr-right">
-      <span class="badge" style="color:#ff9f1c;border-color:#ff9f1c44;">⚠ VIRTUALE</span>
+      <span style="font-size:9px;color:var(--dim);" id="hLastUpdate"></span>
+      <span style="padding:4px 10px;border-radius:6px;font-size:9px;font-weight:700;color:#ff9f1c;border:1px solid #ff9f1c44;background:#ff9f1c11;">⚠ VIRTUALE</span>
       <a href="/" class="btn ghost" style="font-size:10px;">← Portfolio</a>
       <button class="btn ghost" id="btnLogout" style="font-size:10px;">ESCI</button>
     </div>
@@ -94,19 +96,20 @@ a{color:var(--blue);text-decoration:none;}
   <main>
     <!-- HERO KPI -->
     <div class="cards">
-      <div class="card"><div class="v" id="hSimReturn">--</div><div class="l">Rendimento</div></div>
-      <div class="card"><div class="v" id="hSimValue" style="color:var(--gold)">--</div><div class="l">Valore Att.</div></div>
-      <div class="card"><div class="v" id="hSimPL">--</div><div class="l">P&L Virtuale</div></div>
-      <div class="card"><div class="v" id="hSimWin" style="color:var(--green)">--</div><div class="l">Win Rate</div></div>
-      <div class="card"><div class="v" id="hSimPos">0</div><div class="l">Pos. Aperte</div></div>
-      <div class="card"><div class="v" id="hSimLiquidity" style="color:var(--blue)">--</div><div class="l">Liquidità</div></div>
-      <div class="card"><div class="v" id="hSimUniverse" style="color:var(--dim)">0</div><div class="l">Universo</div></div>
+      <div class="card"><div class="v" id="hRet">--</div><div class="l">Rendimento</div></div>
+      <div class="card"><div class="v" id="hVal" style="color:var(--gold)">--</div><div class="l">Valore Att.</div></div>
+      <div class="card"><div class="v" id="hPL">--</div><div class="l">P&L Virtuale</div></div>
+      <div class="card"><div class="v" id="hInv" style="color:var(--dim)">--</div><div class="l">Investito</div></div>
+      <div class="card"><div class="v" id="hLiq" style="color:var(--blue)">--</div><div class="l">Liquidità</div></div>
+      <div class="card"><div class="v" id="hPos">0</div><div class="l">Posizioni</div></div>
+      <div class="card"><div class="v" id="hWR" style="color:var(--green)">--</div><div class="l">Win Rate</div></div>
     </div>
 
     <!-- TAB DASHBOARD -->
     <div id="tabDashboard" class="tab-content active">
+      <!-- CONTROLLI -->
       <div class="panel">
-        <div class="panel-title">⚙️ CONTROLLI SIMULAZIONE
+        <div class="panel-title">⚙️ CONTROLLI
           <select id="simProfile" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:8px;font-size:11px;">
             <option value="conservativo">🛡️ Conservativo (8)</option>
             <option value="bilanciato" selected>⚖️ Bilanciato (10)</option>
@@ -116,97 +119,97 @@ a{color:var(--blue);text-decoration:none;}
             <option value="tech">💻 Tech Focus (10)</option>
           </select>
           <input type="number" id="simCapital" value="20000" step="1000"
-            style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;width:120px;">
-          <button class="btn primary" onclick="runSimulation()">▶ SIMULA</button>
-          <button class="btn success" onclick="openManualPosition()">+ APRI MANUALE</button>
-          <button class="btn ghost" onclick="refreshSimPrices()" style="font-size:10px;">↻ PREZZI</button>
+            style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;width:120px;" placeholder="Capitale €">
+          <button class="btn success" onclick="runAnalysis()">🔍 ANALIZZA</button>
+          <button class="btn primary" onclick="openBuy('')">+ APRI POSIZIONE</button>
+          <button class="btn ghost" onclick="refreshPrices()" style="font-size:10px;">↻ PREZZI</button>
         </div>
-        <div style="font-size:11px;color:var(--dim);">Simulazione dal <strong style="color:var(--gold);">1 Aprile 2025</strong> • Stop Loss fisso: <strong style="color:var(--red);">-7%</strong> • Revisione mensile</div>
+        <div style="font-size:11px;color:var(--dim);">Simulazione dal <strong style="color:var(--gold);">1 Aprile 2025</strong> • Stop Loss: <strong style="color:var(--red);">-7%</strong> • Revisione mensile</div>
         <div id="simStatus" style="margin-top:8px;font-size:11px;color:var(--gold);min-height:16px;"></div>
       </div>
 
+      <!-- POSIZIONI APERTE -->
       <div class="panel">
         <div class="panel-title">📂 POSIZIONI SIMULATE APERTE</div>
-        <div id="simPositionsWrap"><div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione — Esegui simulazione o apri manuale</p></div></div>
+        <div id="positionsWrap"><div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione aperta</p></div></div>
       </div>
 
-      <div class="panel" id="rotationPanel" style="display:none;">
+      <!-- ROTAZIONE -->
+      <div class="panel">
         <div class="panel-title">🔄 SUGGERIMENTI DI ROTAZIONE</div>
-        <div id="rotationWrap"></div>
+        <div id="rotationWrap"><div style="color:var(--dim);font-size:11px;">Premi ANALIZZA per vedere i suggerimenti</div></div>
       </div>
     </div>
 
-    <!-- TAB UNIVERSO -->
-    <div id="tabUniverso" class="tab-content">
+    <!-- TAB WATCHLIST -->
+    <div id="tabWatchlist" class="tab-content">
       <div class="panel">
-        <div class="panel-title">📋 UNIVERSO TITOLI
-          <span id="universeCount" style="color:var(--blue);font-size:10px;"></span>
-          <button class="btn success" id="btnLoadDefault">🏛️ CARICA DEFAULT MIB</button>
-          <button class="btn primary" id="btnImportUniverse">📊 IMPORTA EXCEL</button>
-          <input type="file" id="universeExcelInput" accept=".xlsx,.xls" style="display:none;">
-          <button class="btn danger" id="btnClearUniverse">🗑 SVUOTA</button>
+        <div class="panel-title">👁 WATCHLIST
+          <span id="wlCount" style="color:var(--blue);font-size:10px;"></span>
+          <button class="btn success" id="btnLoadDefault">🏛️ DEFAULT MIB</button>
+          <button class="btn primary" id="btnImportWL">📊 IMPORTA EXCEL</button>
+          <input type="file" id="wlExcelInput" accept=".xlsx,.xls" style="display:none;">
+          <button class="btn ghost" onclick="refreshPrices()" style="font-size:10px;">↻ PREZZI</button>
+          <button class="btn danger" id="btnClearWL">🗑</button>
         </div>
-        <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">
-          <strong style="color:var(--gold);">Default MIB:</strong> AZM, BGN, BMED, CE, ENEL, ENI, G, STM, CPR, REC — prezzi al 1 Aprile 2025 caricati automaticamente.
-        </div>
-        <div id="universeWrap"><div class="empty-state"><div class="ic">📊</div><p>Carica il default MIB o importa un file Excel</p></div></div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">Titoli ordinati per Score composito • 🟢 BUY = Score ≥ 5 • ✅ = già in portafoglio</div>
+        <div id="watchlistWrap"><div class="empty-state"><div class="ic">📊</div><p>Carica DEFAULT MIB o importa Excel</p></div></div>
       </div>
     </div>
 
     <!-- TAB CLASSIFICA -->
     <div id="tabClassifica" class="tab-content">
       <div class="panel">
-        <div class="panel-title">🏆 CLASSIFICA — SCORE COMPOSITO
-          <button class="btn ghost" onclick="loadRanking()" style="font-size:10px;">↻ RICALCOLA</button>
+        <div class="panel-title">🏆 CLASSIFICA SCORE COMPOSITO
+          <button class="btn ghost" onclick="runAnalysis()" style="font-size:10px;">🔍 RICALCOLA</button>
         </div>
-        <div id="rankingWrap"><div class="empty-state"><p>Esegui una simulazione per vedere la classifica</p></div></div>
+        <div id="rankingWrap"><div class="empty-state"><p>Premi ANALIZZA per vedere la classifica</p></div></div>
       </div>
     </div>
 
     <!-- TAB STORICO -->
     <div id="tabStorico" class="tab-content">
       <div class="panel">
-        <div class="panel-title">📅 STORICO OPERAZIONI SIMULATE</div>
-        <div id="closedSimWrap"><div class="empty-state"><p>Nessuna operazione chiusa</p></div></div>
+        <div class="panel-title">📅 STORICO OPERAZIONI</div>
+        <div id="storWrap"><div class="empty-state"><p>Nessuna operazione chiusa</p></div></div>
       </div>
     </div>
 
     <!-- TAB STATISTICHE -->
     <div id="tabStatistiche" class="tab-content">
       <div class="panel">
-        <div class="panel-title">📊 STATISTICHE SIMULATORE</div>
-        <div id="simStatsWrap"><div class="empty-state"><p>Chiudi operazioni per vedere le statistiche</p></div></div>
+        <div class="panel-title">📊 STATISTICHE</div>
+        <div id="statsWrap"><div class="empty-state"><p>Chiudi operazioni per le statistiche</p></div></div>
       </div>
       <div class="panel">
         <div class="panel-title">📈 EQUITY CURVE — DAL 1 APRILE 2025</div>
-        <div style="height:280px;"><canvas id="chartSimCapital"></canvas></div>
+        <div style="height:280px;"><canvas id="chartEquity"></canvas></div>
       </div>
     </div>
   </main>
 
   <nav class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('Dashboard')" id="tabBtnDashboard"><span class="tab-icon">🏠</span><span class="tab-label">Dashboard</span></button>
-    <button class="tab-btn" onclick="switchTab('Universo')" id="tabBtnUniverso"><span class="tab-icon">📋</span><span class="tab-label">Universo</span></button>
+    <button class="tab-btn active" onclick="switchTab('Dashboard')" id="tabBtnDashboard"><span class="tab-icon">📊</span><span class="tab-label">Dashboard</span></button>
+    <button class="tab-btn" onclick="switchTab('Watchlist')" id="tabBtnWatchlist"><span class="tab-icon">👁</span><span class="tab-label">Watchlist</span></button>
     <button class="tab-btn" onclick="switchTab('Classifica')" id="tabBtnClassifica"><span class="tab-icon">🏆</span><span class="tab-label">Classifica</span></button>
     <button class="tab-btn" onclick="switchTab('Storico')" id="tabBtnStorico"><span class="tab-icon">📅</span><span class="tab-label">Storico</span></button>
-    <button class="tab-btn" onclick="switchTab('Statistiche')" id="tabBtnStatistiche"><span class="tab-icon">📊</span><span class="tab-label">Statistiche</span></button>
+    <button class="tab-btn" onclick="switchTab('Statistiche')" id="tabBtnStatistiche"><span class="tab-icon">📊</span><span class="tab-label">Stat.</span></button>
   </nav>
 </div>
 
-<!-- MODAL APRI POSIZIONE MANUALE -->
-<div class="modal-overlay" id="modalOpenSimOverlay">
+<!-- MODAL APRI POSIZIONE -->
+<div class="modal-overlay" id="modalBuyOverlay">
   <div class="modal">
     <h3>📥 Apri Posizione Simulata</h3>
-    <div class="fg"><label>Ticker</label>
-      <select id="openSimTicker"></select></div>
+    <div class="fg"><label>Ticker</label><select id="buyTicker"></select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="fg"><label>Prezzo Acquisto €</label><input type="number" id="openSimPrice" step="any" placeholder="es. 25.40"></div>
-      <div class="fg"><label>Quantità</label><input type="number" id="openSimQty" value="100" min="1"></div>
+      <div class="fg"><label>Prezzo Acquisto €</label><input type="number" id="buyPrice" step="any"></div>
+      <div class="fg"><label>Quantità</label><input type="number" id="buyQty" value="100" min="1"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="fg"><label>Data Acquisto</label><input type="date" id="openSimDate" value="2025-04-01"></div>
+      <div class="fg"><label>Data (default 01/04/2025)</label><input type="date" id="buyDate" value="2025-04-01"></div>
       <div class="fg"><label>Profilo</label>
-        <select id="openSimProfile">
+        <select id="buyProfile">
           <option value="conservativo">🛡️ Conservativo</option>
           <option value="bilanciato" selected>⚖️ Bilanciato</option>
           <option value="aggressivo">🚀 Aggressivo</option>
@@ -216,31 +219,31 @@ a{color:var(--blue);text-decoration:none;}
         </select>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--red);margin-bottom:14px;">🛑 Stop Loss automatico: -7% dal prezzo di acquisto</div>
+    <div style="font-size:11px;color:var(--red);background:#ff6b6b11;padding:8px;border-radius:6px;margin-bottom:14px;">🛑 Stop Loss automatico: -7% dal prezzo di acquisto</div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
-      <button class="btn ghost" id="btnCancelOpenSim">Annulla</button>
-      <button class="btn primary" id="btnConfirmOpenSim">Apri Posizione</button>
+      <button class="btn ghost" id="btnCancelBuy">Annulla</button>
+      <button class="btn primary" id="btnConfirmBuy">Apri Posizione</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL CHIUDI POSIZIONE -->
-<div class="modal-overlay" id="modalCloseSimOverlay">
+<div class="modal-overlay" id="modalCloseOverlay">
   <div class="modal">
-    <h3>📤 Chiudi Posizione Simulata</h3>
-    <div style="font-size:12px;color:var(--dim);margin-bottom:14px;" id="closeSimInfo"></div>
-    <div class="fg"><label>Prezzo di Vendita €</label><input type="number" id="closeSimPrice" step="any"></div>
-    <div class="fg"><label>Motivo Uscita</label>
-      <select id="closeSimReason">
+    <h3>📤 Chiudi Posizione</h3>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:14px;" id="closeInfo"></div>
+    <div class="fg"><label>Prezzo di Vendita €</label><input type="number" id="closePrice" step="any"></div>
+    <div class="fg"><label>Motivo</label>
+      <select id="closeReason">
         <option value="target">🎯 Target Raggiunto</option>
-        <option value="stop">🛑 Stop Loss</option>
+        <option value="stop">🛑 Stop Loss -7%</option>
         <option value="rotazione">🔄 Rotazione Mensile</option>
         <option value="manuale">✋ Uscita Manuale</option>
       </select>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;">
-      <button class="btn ghost" id="btnCancelCloseSim">Annulla</button>
-      <button class="btn primary" id="btnConfirmCloseSim">Chiudi Posizione</button>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">
+      <button class="btn ghost" id="btnCancelClose">Annulla</button>
+      <button class="btn primary" id="btnConfirmClose">Chiudi</button>
     </div>
   </div>
 </div>
@@ -249,74 +252,71 @@ a{color:var(--blue);text-decoration:none;}
 // ── CONFIG ────────────────────────────────────────────────────────────
 const SUPA_URL = "https://bvzgudqbirlqnotaqame.supabase.co";
 const SUPA_KEY = "sb_publishable_6JQK_8MZHBiEBVnq0ei3cQ_qbiuc5RO";
-
 const USERS = {
   fabrizio: { password: "Marinportfoglio2026.", name: "FABRIZIO" },
   jonathan:  { password: "Pessinaportfoglio2026.", name: "JONATHAN" }
 };
-const AUTH_KEY = "sim_auth_v1";
+const AUTH_KEY = "sim_auth_v2";
 
 const SIM_PROFILES = {
-  conservativo: { name: "Conservativo", n: 8,  icon: "🛡️", weights: { "Finanziario":30, "Utilities":25, "Salute":20, "Energia":15, "Consumer":10 } },
-  bilanciato:   { name: "Bilanciato",   n: 10, icon: "⚖️", weights: { "Finanziario":30, "Utilities":15, "Salute":15, "Energia":15, "Tecnologia":15, "Consumer":10 } },
-  aggressivo:   { name: "Aggressivo",   n: 12, icon: "🚀", weights: { "Tecnologia":30, "Finanziario":25, "Consumer":20, "Salute":15, "Energia":10 } },
-  allweather:   { name: "All Weather",  n: 10, icon: "🌦️", weights: { "Finanziario":25, "Utilities":25, "Energia":20, "Salute":15, "Tecnologia":15 } },
-  buffett:      { name: "Buffett",      n: 10, icon: "🎩", weights: { "Finanziario":40, "Consumer":25, "Utilities":15, "Salute":10, "Energia":10 } },
-  tech:         { name: "Tech Focus",   n: 10, icon: "💻", weights: { "Tecnologia":40, "Finanziario":20, "Consumer":20, "Salute":10, "Utilities":10 } }
+  conservativo: { name:"Conservativo", n:8,  icon:"🛡️", weights:{"Finanziario":30,"Utilities":25,"Salute":20,"Energia":15,"Consumer":10} },
+  bilanciato:   { name:"Bilanciato",   n:10, icon:"⚖️", weights:{"Finanziario":25,"Utilities":15,"Salute":15,"Energia":15,"Tecnologia":15,"Consumer":15} },
+  aggressivo:   { name:"Aggressivo",   n:12, icon:"🚀", weights:{"Tecnologia":35,"Finanziario":25,"Consumer":20,"Salute":10,"Energia":10} },
+  allweather:   { name:"All Weather",  n:10, icon:"🌦️", weights:{"Finanziario":25,"Utilities":25,"Energia":20,"Salute":15,"Tecnologia":15} },
+  buffett:      { name:"Buffett",      n:10, icon:"🎩", weights:{"Finanziario":40,"Consumer":25,"Utilities":15,"Salute":10,"Energia":10} },
+  tech:         { name:"Tech Focus",   n:10, icon:"💻", weights:{"Tecnologia":50,"Finanziario":20,"Consumer":15,"Salute":15} }
 };
 
-// Titoli di default con prezzi storici al 1 Aprile 2025 (da caricare al primo avvio)
-const DEFAULT_UNIVERSE = [
-  { ticker: "AZM.MI",  name: "Azimut Holding S.p.A.",    sector: "Finanziario",   buyDate: "2025-04-01" },
-  { ticker: "BGN.MI",  name: "Banca Generali S.p.A.",     sector: "Finanziario",   buyDate: "2025-04-01" },
-  { ticker: "BMED.MI", name: "Banca Mediolanum S.p.A.",   sector: "Finanziario",   buyDate: "2025-04-01" },
-  { ticker: "CE.MI",   name: "Credito Emiliano S.p.A.",   sector: "Finanziario",   buyDate: "2025-04-01" },
-  { ticker: "ENEL.MI", name: "Enel SpA",                  sector: "Utilities",     buyDate: "2025-04-01" },
-  { ticker: "ENI.MI",  name: "Eni S.p.A.",                sector: "Energia",       buyDate: "2025-04-01" },
-  { ticker: "G.MI",    name: "Assicurazioni Generali",    sector: "Finanziario",   buyDate: "2025-04-01" },
-  { ticker: "STMMI.MI",  name: "STMicroelectronics N.V.",   sector: "Tecnologia",    buyDate: "2025-04-01" },
-  { ticker: "CPR.MI",  name: "Davide Campari-Milano N.V.", sector: "Consumer",     buyDate: "2025-04-01" },
-  { ticker: "REC.MI",  name: "Recordati S.p.A.",          sector: "Salute",        buyDate: "2025-04-01" }
+const DEFAULT_TICKERS = [
+  {ticker:"AZM.MI",  name:"Azimut Holding",       sector:"Finanziario"},
+  {ticker:"BGN.MI",  name:"Banca Generali",        sector:"Finanziario"},
+  {ticker:"BMED.MI", name:"Banca Mediolanum",      sector:"Finanziario"},
+  {ticker:"CE.MI",   name:"Credito Emiliano",      sector:"Finanziario"},
+  {ticker:"ENEL.MI", name:"Enel SpA",              sector:"Utilities"},
+  {ticker:"ENI.MI",  name:"Eni S.p.A.",            sector:"Energia"},
+  {ticker:"G.MI",    name:"Assicurazioni Generali",sector:"Finanziario"},
+  {ticker:"STMMI.MI",name:"STMicroelectronics",    sector:"Tecnologia"},
+  {ticker:"CPR.MI",  name:"Campari",               sector:"Consumer"},
+  {ticker:"REC.MI",  name:"Recordati",             sector:"Salute"}
 ];
 
 let currentUser = null;
 let simPositions = [];
-let closedSimPositions = [];
-let simUniverse = [];
+let closedPositions = [];
+let watchlist = [];
 let lastRanking = [];
-let closingSimId = null;
-let chartSimCapital = null;
+let closingId = null;
+let chartEquity = null;
 
 // ── SUPABASE ──────────────────────────────────────────────────────────
-async function sbFetch(path, method = "GET", body = null) {
+async function sbFetch(path, method="GET", body=null) {
   const opts = {
     method,
     headers: {
       "apikey": SUPA_KEY,
       "Authorization": "Bearer " + SUPA_KEY,
       "Content-Type": "application/json",
-      "Prefer": method === "POST" ? "resolution=merge-duplicates,return=minimal" : "return=representation"
+      "Prefer": method==="POST" ? "resolution=merge-duplicates,return=minimal" : "return=representation"
     }
   };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(SUPA_URL + "/rest/v1/" + path, opts);
   const text = await res.text();
+  if (!res.ok) throw new Error(text);
   return text ? JSON.parse(text) : [];
 }
 
-// ── YAHOO PROXY ───────────────────────────────────────────────────────
-async function fetchYahoo(ticker, range = "1d", interval = "1d") {
+async function fetchYahoo(ticker, range="1d", interval="1d") {
   const url = `/.netlify/functions/yahoo?ticker=${encodeURIComponent(ticker)}&range=${range}&interval=${interval}`;
   const res = await fetch(url);
   return await res.json();
 }
 
-// ── LOGIN ──────────────────────────────────────────────────────────────
+// ── AUTH ──────────────────────────────────────────────────────────────
 window.doLogin = function() {
   const user = document.getElementById("loginUser").value;
   const pwd = document.getElementById("loginPassword").value;
-  const u = USERS[user];
-  if (u && pwd === u.password) {
+  if (USERS[user] && pwd === USERS[user].password) {
     currentUser = user;
     try { localStorage.setItem(AUTH_KEY, user); } catch(e) {}
     showApp(user);
@@ -342,14 +342,10 @@ document.getElementById("btnLogout").addEventListener("click", () => {
   document.getElementById("loginPassword").value = "";
 });
 
-(function checkAuth() {
+(function() {
   try {
-    const saved = localStorage.getItem(AUTH_KEY);
-    if (saved && USERS[saved]) {
-      currentUser = saved;
-      document.getElementById("loginUser").value = saved;
-      showApp(saved);
-    }
+    const s = localStorage.getItem(AUTH_KEY);
+    if (s && USERS[s]) { currentUser = s; document.getElementById("loginUser").value = s; showApp(s); }
   } catch(e) {}
 })();
 
@@ -359,18 +355,16 @@ window.switchTab = function(name) {
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
   document.getElementById("tab" + name).classList.add("active");
   document.getElementById("tabBtn" + name).classList.add("active");
-  if (name === "Statistiche") setTimeout(renderSimChart, 100);
-  if (name === "Universo") renderUniverse();
+  if (name === "Statistiche") setTimeout(renderEquityChart, 100);
+  if (name === "Watchlist") renderWatchlist();
+  if (name === "Classifica") renderRanking(lastRanking, simPositions);
 };
 
 // ── INIT ──────────────────────────────────────────────────────────────
 async function init() {
   setStatus("⏳ Caricamento...");
   await loadAllData();
-  // Se universo vuoto, carica default
-  if (simUniverse.length === 0) {
-    await loadDefaultUniverse();
-  }
+  if (watchlist.length === 0) await loadDefaultTickers();
   renderAll();
   setStatus("");
 }
@@ -382,26 +376,24 @@ function setStatus(msg) {
 
 async function loadAllData() {
   try {
-    const [openData, closedData, universeData] = await Promise.all([
+    const [open, closed, wl] = await Promise.all([
       sbFetch(`sim_positions?select=*&user_id=eq.${currentUser}&status=eq.open&order=buy_date.asc`),
       sbFetch(`sim_positions?select=*&user_id=eq.${currentUser}&status=eq.closed&order=sell_date.desc`),
       sbFetch(`sim_universe?select=*&user_id=eq.${currentUser}&order=ticker.asc`)
     ]);
-    simPositions = openData || [];
-    closedSimPositions = closedData || [];
-    simUniverse = universeData || [];
-  } catch(e) { console.error("Errore caricamento:", e); }
+    simPositions = open || [];
+    closedPositions = closed || [];
+    watchlist = wl || [];
+  } catch(e) { console.error(e); }
 }
 
-// ── CARICA UNIVERSO DEFAULT ───────────────────────────────────────────
-async function loadDefaultUniverse() {
-  setStatus("⏳ Caricamento universo default — recupero prezzi storici al 1 Aprile 2025...");
+// ── LOAD DEFAULT TICKERS ──────────────────────────────────────────────
+async function loadDefaultTickers() {
+  setStatus("⏳ Caricamento titoli default al 1 Aprile 2025...");
   const rows = [];
-  for (const t of DEFAULT_UNIVERSE) {
-    let buyPrice = null;
-    let currentPrice = null;
+  for (const t of DEFAULT_TICKERS) {
+    let buyPrice = null, currentPrice = null;
     try {
-      // Fetch storico per trovare prezzo al 1 Aprile 2025
       const data = await fetchYahoo(t.ticker, "max", "1d");
       const result = data?.chart?.result?.[0];
       const timestamps = result?.timestamp || [];
@@ -410,246 +402,315 @@ async function loadDefaultUniverse() {
       let minDiff = Infinity;
       timestamps.forEach((ts, i) => {
         const diff = Math.abs(ts - targetTs);
-        if (diff < minDiff && closes[i] != null) {
-          minDiff = diff;
-          buyPrice = closes[i];
-        }
+        if (diff < minDiff && closes[i] != null) { minDiff = diff; buyPrice = closes[i]; }
       });
-      currentPrice = result?.meta?.regularMarketPrice || null;
-      setStatus(`⏳ ${t.ticker} → Ref: €${buyPrice?.toFixed(2) || "--"} | Att: €${currentPrice?.toFixed(2) || "--"}`);
-    } catch(e) {
-      setStatus(`⚠ ${t.ticker}: errore fetch`);
-    }
+      currentPrice = result?.meta?.regularMarketPrice;
+      setStatus(`⏳ ${t.ticker}: Rif €${buyPrice?.toFixed(2)||"--"} | Att €${currentPrice?.toFixed(2)||"--"}`);
+    } catch(e) { setStatus(`⚠ ${t.ticker}: errore`); }
     const row = {
       id: `simuni_${t.ticker}_${currentUser}`,
       user_id: currentUser,
-      ticker: t.ticker,
-      name: t.name,
-      sector: t.sector,
+      ticker: t.ticker, name: t.name, sector: t.sector,
       currency: "EUR",
-      buy_price_ref: buyPrice != null ? parseFloat(buyPrice.toFixed(4)) : null,
-      current_price_ref: currentPrice != null ? parseFloat(currentPrice.toFixed(4)) : null
+      buy_price_ref: buyPrice ? parseFloat(buyPrice.toFixed(4)) : null,
+      current_price_ref: currentPrice ? parseFloat(currentPrice.toFixed(4)) : null
     };
     rows.push(row);
-    // Salva subito ogni titolo
-    await sbFetch("sim_universe?on_conflict=id", "POST", [row]);
+    try { await sbFetch("sim_universe?on_conflict=id", "POST", [row]); } catch(e) {}
     await new Promise(r => setTimeout(r, 500));
   }
-  simUniverse = rows;
-  setStatus(`✅ Universo default caricato — ${rows.filter(r=>r.buy_price_ref).length}/${rows.length} prezzi trovati`);
-  renderUniverse();
+  watchlist = rows;
+  setStatus(`✅ ${rows.filter(r=>r.buy_price_ref).length}/${rows.length} prezzi al 1/4 trovati`);
 }
 
 // ── RENDER ALL ────────────────────────────────────────────────────────
 function renderAll() {
   renderHero();
-  renderSimPositions();
-  renderClosedPositions();
-  renderSimStats();
+  renderPositionsTable();
+  renderRotationPanel();
+  renderClosedTable();
+  renderStats();
 }
 
-// ── HERO ──────────────────────────────────────────────────────────────
+// ── HERO KPI ──────────────────────────────────────────────────────────
 function renderHero() {
-  const capital = parseFloat(document.getElementById("simCapital").value) || 20000;
-  let totalBuy = 0, totalCurrent = 0;
+  const capital = parseFloat(document.getElementById("simCapital")?.value||"20000");
+  let invested = 0, currentVal = 0;
   simPositions.forEach(p => {
-    totalBuy += (p.buy_price || 0) * (p.qty || 0);
-    totalCurrent += (p.current_price || p.buy_price || 0) * (p.qty || 0);
+    invested += (p.buy_price||0) * (p.qty||0);
+    currentVal += (p.current_price||p.buy_price||0) * (p.qty||0);
   });
-  const pl = totalCurrent - totalBuy;
-  const ret = totalBuy > 0 ? (pl / totalBuy * 100) : 0;
-  const winners = closedSimPositions.filter(p => p.sell_price > p.buy_price).length;
-  const winRate = closedSimPositions.length > 0 ? (winners / closedSimPositions.length * 100).toFixed(0) + "%" : "--";
-  const liquidity = capital - totalBuy;
-  const plCol = pl >= 0 ? "#00d4b8" : "#ff6b6b";
+  const pl = currentVal - invested;
+  const ret = invested > 0 ? (pl/invested*100) : 0;
+  const liq = Math.max(0, capital - invested);
+  const winners = closedPositions.filter(p => p.sell_price > p.buy_price).length;
+  const wr = closedPositions.length > 0 ? (winners/closedPositions.length*100).toFixed(0)+"%" : "--";
 
-  document.getElementById("hSimReturn").textContent = (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%";
-  document.getElementById("hSimReturn").style.color = ret >= 0 ? "#00d4b8" : "#ff6b6b";
-  document.getElementById("hSimValue").textContent = "€" + totalCurrent.toFixed(0);
-  document.getElementById("hSimPL").textContent = (pl >= 0 ? "+" : "") + "€" + pl.toFixed(0);
-  document.getElementById("hSimPL").style.color = plCol;
-  document.getElementById("hSimWin").textContent = winRate;
-  document.getElementById("hSimPos").textContent = simPositions.length;
-  document.getElementById("hSimLiquidity").textContent = "€" + Math.max(0, liquidity).toFixed(0);
-  document.getElementById("hSimUniverse").textContent = simUniverse.length;
+  el("hRet").textContent = (ret>=0?"+":"")+ret.toFixed(2)+"%";
+  el("hRet").style.color = ret>=0?"#00d4b8":"#ff6b6b";
+  el("hVal").textContent = "€"+currentVal.toFixed(0);
+  el("hPL").textContent = (pl>=0?"+":"")+"€"+pl.toFixed(0);
+  el("hPL").style.color = pl>=0?"#00d4b8":"#ff6b6b";
+  el("hInv").textContent = "€"+invested.toFixed(0);
+  el("hLiq").textContent = "€"+liq.toFixed(0);
+  el("hPos").textContent = simPositions.length;
+  el("hWR").textContent = wr;
+  el("hLastUpdate").textContent = new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
 }
 
-// ── RENDER POSIZIONI ──────────────────────────────────────────────────
-function renderSimPositions() {
-  const wrap = document.getElementById("simPositionsWrap");
-  if (!wrap) return;
-  if (simPositions.length === 0) {
-    wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione aperta — Esegui una simulazione o apri manualmente</p></div>`;
+function el(id) { return document.getElementById(id)||{}; }
+
+// ── POSITIONS TABLE ───────────────────────────────────────────────────
+function renderPositionsTable() {
+  const wrap = el("positionsWrap");
+  if (!wrap.innerHTML !== undefined && simPositions.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione — premi AVVIA SIMULAZIONE</p></div>`;
     return;
   }
-  let totalBuy = 0, totalNow = 0;
-  simPositions.forEach(p => {
-    totalBuy += (p.buy_price || 0) * (p.qty || 0);
-    totalNow += (p.current_price || p.buy_price || 0) * (p.qty || 0);
-  });
+  if (simPositions.length === 0) { wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione — premi AVVIA SIMULAZIONE</p></div>`; return; }
+
+  let totalInv=0, totalNow=0;
+  simPositions.forEach(p => { totalInv+=(p.buy_price||0)*(p.qty||0); totalNow+=(p.current_price||p.buy_price||0)*(p.qty||0); });
 
   let h = `<div style="overflow-x:auto;"><table>
     <tr>
       <th>Ticker</th><th>Nome</th><th>Settore</th><th>Qty</th>
-      <th>P.Acq. (01/04)</th><th>Attuale</th><th>Val.Acq.</th><th>Val.Att.</th>
-      <th>P&L %</th><th>P&L €</th><th>Stop -7%</th><th>Data</th><th>Profilo</th><th></th>
+      <th>P.Acq 01/04</th><th>Prezzo Att.</th><th>Investito</th><th>Val. Att.</th>
+      <th>P&L %</th><th>P&L €</th><th>Stop -7%</th><th>Segnale</th><th>Data</th><th></th>
     </tr>`;
 
   simPositions.forEach(p => {
     const price = p.current_price || p.buy_price;
-    const pl = ((price - p.buy_price) / p.buy_price * 100);
-    const plAbs = (price - p.buy_price) * p.qty;
-    const valBuy = p.buy_price * p.qty;
-    const valNow = price * p.qty;
-    const plCol = plAbs >= 0 ? "#00d4b8" : "#ff6b6b";
+    const pl = ((price-p.buy_price)/p.buy_price*100);
+    const plAbs = (price-p.buy_price)*p.qty;
+    const inv = p.buy_price*p.qty;
+    const now = price*p.qty;
     const stopHit = p.stop_loss && price <= p.stop_loss;
-    const stopPct = p.stop_loss ? ((price - p.stop_loss) / p.buy_price * 100).toFixed(1) : null;
-    const stopCol = stopHit ? "#ff6b6b" : stopPct && parseFloat(stopPct) < -4 ? "#ffd23f" : "#7d8aa3";
-    h += `<tr style="${stopHit ? 'background:#ff6b6b08;border-left:3px solid #ff6b6b;' : ''}">
-      <td><strong style="color:#4fa3ff;">${p.ticker}</strong>${stopHit ? '<span style="color:#ff6b6b;font-size:10px;display:block;">🛑 STOP HIT</span>' : ''}</td>
-      <td style="font-size:11px;">${p.name||""}</td>
+    const plCol = plAbs>=0?"#00d4b8":"#ff6b6b";
+    const stopCol = stopHit?"#ff6b6b":p.stop_loss&&((price-p.stop_loss)/p.buy_price*100)<4?"#ffd23f":"#7d8aa3";
+    // Signal based on score
+    const score = p.score || null;
+    const sigCol = score>=7?"#00d4b8":score>=5?"#80ed99":score>=3?"#ffd23f":"#ff6b6b";
+    const sigTxt = score>=7?"STRONG BUY":score>=5?"BUY":score>=3?"NEUTRO":score?"SELL":"--";
+
+    h += `<tr style="${stopHit?'background:#ff6b6b08;':''}">
+      <td>
+        <a href="https://finance.yahoo.com/chart/${p.ticker}" target="_blank" style="color:#4fa3ff;font-weight:700;">${p.ticker}</a>
+        ${stopHit?'<div style="color:#ff6b6b;font-size:10px;font-weight:700;">🛑 STOP LOSS</div>':''}
+      </td>
+      <td style="font-size:11px;">${p.name||""}<div style="font-size:10px;color:var(--dim)">${p.profile||""}</div></td>
       <td style="font-size:10px;color:var(--dim);">${p.sector||""}</td>
       <td style="font-family:'JetBrains Mono',monospace;">${p.qty}</td>
-      <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.buy_price).toFixed(2)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">€${parseFloat(p.buy_price).toFixed(2)}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">€${parseFloat(price).toFixed(2)}</td>
-      <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">€${valBuy.toFixed(0)}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${valNow>valBuy?"#00d4b8":"#ff6b6b"};">€${valNow.toFixed(0)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">€${inv.toFixed(0)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${now>inv?"#00d4b8":"#ff6b6b"};">€${now.toFixed(0)}</td>
       <td><span class="chip ${plAbs>=0?'up':'down'}">${pl>=0?'+':''}${pl.toFixed(2)}%</span></td>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${plCol};">${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)}</td>
-      <td style="font-size:11px;color:${stopCol};">€${p.stop_loss ? parseFloat(p.stop_loss).toFixed(2) : "--"}</td>
+      <td style="font-size:11px;color:${stopCol};">${p.stop_loss?"€"+parseFloat(p.stop_loss).toFixed(2):"--"}</td>
+      <td>${score?`<span style="font-size:10px;font-weight:700;color:${sigCol};background:${sigCol}22;padding:2px 8px;border-radius:5px;">${sigTxt}</span>`:'--'}</td>
       <td style="font-size:10px;color:var(--dim);">${p.buy_date||""}</td>
-      <td style="font-size:10px;color:var(--dim);">${p.profile||""}</td>
       <td>
-        <button onclick="openCloseSim('${p.id}')" style="background:#ff6b6b22;color:#ff6b6b;border:1px solid #ff6b6b44;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:700;">CHIUDI</button>
+        <button onclick="openClose('${p.id}')" style="background:#ff6b6b22;color:#ff6b6b;border:1px solid #ff6b6b44;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:700;">CHIUDI</button>
       </td>
     </tr>`;
   });
 
-  // Totale
-  const totalPL = totalNow - totalBuy;
-  const totalPLPct = totalBuy > 0 ? (totalPL / totalBuy * 100) : 0;
-  h += `<tr style="border-top:2px solid var(--line);font-weight:700;">
-    <td colspan="6" style="padding:10px 8px;">TOTALE PORTAFOGLIO SIMULATO</td>
-    <td style="font-family:'JetBrains Mono',monospace;">€${totalBuy.toFixed(0)}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${totalNow>totalBuy?'#00d4b8':'#ff6b6b'};">€${totalNow.toFixed(0)}</td>
-    <td><span class="chip ${totalPL>=0?'up':'down'}">${totalPLPct>=0?'+':''}${totalPLPct.toFixed(2)}%</span></td>
-    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${totalPL>=0?'#00d4b8':'#ff6b6b'};">${totalPL>=0?'+':''}€${Math.abs(totalPL).toFixed(0)}</td>
+  // Totale row
+  const totPL = totalNow - totalInv;
+  const totPct = totalInv>0?(totPL/totalInv*100):0;
+  h += `<tr style="border-top:2px solid var(--line);background:var(--panel2);">
+    <td colspan="6" style="padding:10px 8px;font-weight:700;">TOTALE</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">€${totalInv.toFixed(0)}</td>
+    <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${totalNow>totalInv?"#00d4b8":"#ff6b6b"};">€${totalNow.toFixed(0)}</td>
+    <td><span class="chip ${totPL>=0?'up':'down'}">${totPct>=0?'+':''}${totPct.toFixed(2)}%</span></td>
+    <td style="font-weight:700;color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+':''}€${Math.abs(totPL).toFixed(0)}</td>
     <td colspan="4"></td>
   </tr>`;
   h += "</table></div>";
   wrap.innerHTML = h;
 }
 
-// ── APRI POSIZIONE MANUALE ────────────────────────────────────────────
-window.openManualPosition = function() {
-  document.getElementById("modalOpenSimOverlay").classList.add("show");
-  // Popola select ticker dall'universo
-  const sel = document.getElementById("openSimTicker");
-  sel.innerHTML = simUniverse.map(t => `<option value="${t.ticker}">${t.ticker} — ${t.name}</option>`).join("");
-};
+// ── ROTATION PANEL ────────────────────────────────────────────────────
+function renderRotationPanel() {
+  const wrap = el("rotationWrap");
+  if (!wrap.innerHTML !== undefined) return;
+  if (lastRanking.length === 0) { wrap.innerHTML = `<div style="color:var(--dim);font-size:11px;">Esegui l'analisi per vedere i suggerimenti di rotazione</div>`; return; }
 
-document.getElementById("btnCancelOpenSim")?.addEventListener("click", () => {
-  document.getElementById("modalOpenSimOverlay").classList.remove("show");
-});
+  const profile = document.getElementById("simProfile")?.value || "bilanciato";
+  const prof = SIM_PROFILES[profile];
+  const selected = selectByProfile(lastRanking, prof);
+  const currentTickers = simPositions.map(p => p.ticker);
+  const toKeep = simPositions.filter(p => selected.find(s => s.ticker === p.ticker));
+  const toSell = simPositions.filter(p => !selected.find(s => s.ticker === p.ticker));
+  const toBuy = selected.filter(s => !currentTickers.includes(s.ticker));
 
-document.getElementById("btnConfirmOpenSim")?.addEventListener("click", async () => {
-  const ticker = document.getElementById("openSimTicker").value;
-  const buyPrice = parseFloat(document.getElementById("openSimPrice").value);
-  const qty = parseInt(document.getElementById("openSimQty").value);
-  const profile = document.getElementById("openSimProfile").value;
-  const buyDate = document.getElementById("openSimDate").value || new Date().toISOString().slice(0,10);
-  if (!ticker || !buyPrice || !qty) { alert("Compila tutti i campi"); return; }
+  let h = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">`;
 
-  const u = simUniverse.find(x => x.ticker === ticker);
-  const pos = {
-    id: "simpos_" + Date.now() + "_" + ticker,
-    user_id: currentUser,
-    ticker, name: u?.name || ticker,
-    qty, buy_price: buyPrice, buy_date: buyDate,
-    currency: "EUR", sector: u?.sector || "Altro",
-    stop_loss: parseFloat((buyPrice * 0.93).toFixed(4)),
-    profile: SIM_PROFILES[profile]?.name || profile,
-    status: "open", current_price: buyPrice
-  };
-
-  await sbFetch("sim_positions?on_conflict=id", "POST", [pos]);
-  document.getElementById("modalOpenSimOverlay").classList.remove("show");
-  await loadAllData();
-  renderAll();
-  await sendTelegramBoth(`📥 <b>APERTURA SIMULATA — ${ticker}</b>\n\n📈 ${u?.name||ticker}\n💰 Prezzo: €${buyPrice.toFixed(2)}\n📦 Qty: ${qty}\n🛑 Stop: €${(buyPrice*0.93).toFixed(2)}\n📅 Data: ${buyDate}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
-});
-
-// ── CHIUDI POSIZIONE ──────────────────────────────────────────────────
-window.openCloseSim = function(id) {
-  closingSimId = id;
-  const p = simPositions.find(x => x.id === id);
-  if (p) {
-    document.getElementById("closeSimPrice").value = p.current_price || p.buy_price;
-    document.getElementById("closeSimInfo").textContent = `${p.ticker} — Acq: €${parseFloat(p.buy_price).toFixed(2)} | Stop: €${p.stop_loss ? parseFloat(p.stop_loss).toFixed(2) : "--"}`;
+  if (toBuy.length > 0) {
+    h += `<div class="action-card buy">
+      <div style="font-weight:700;color:#00d4b8;margin-bottom:8px;font-size:11px;letter-spacing:1px;">🟢 ACQUISTA (${toBuy.length})</div>
+      ${toBuy.map(s => `<div style="padding:5px 0;font-size:12px;border-top:1px solid #00d4b822;">
+        <strong>${s.ticker}</strong> <span style="color:var(--dim);font-size:10px;">${s.name}</span>
+        <div style="font-size:10px;color:#ffd23f;">Score: ${s.finalScore?.toFixed(1)} | ${s.sector}</div>
+      </div>`).join("")}
+    </div>`;
   }
-  document.getElementById("modalCloseSimOverlay").classList.add("show");
-};
 
-document.getElementById("btnCancelCloseSim").addEventListener("click", () => {
-  document.getElementById("modalCloseSimOverlay").classList.remove("show");
-});
+  if (toSell.length > 0) {
+    h += `<div class="action-card sell">
+      <div style="font-weight:700;color:#ff6b6b;margin-bottom:8px;font-size:11px;letter-spacing:1px;">🔴 CHIUDI (${toSell.length})</div>
+      ${toSell.map(p => `<div style="padding:5px 0;font-size:12px;border-top:1px solid #ff6b6b22;display:flex;align-items:center;justify-content:space-between;">
+        <div><strong>${p.ticker}</strong> <span style="color:var(--dim);font-size:10px;">${p.name}</span></div>
+        <button onclick="openClose('${p.id}')" style="background:#ff6b6b;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer;">CHIUDI</button>
+      </div>`).join("")}
+    </div>`;
+  }
 
-document.getElementById("btnConfirmCloseSim").addEventListener("click", async () => {
-  const p = simPositions.find(x => x.id === closingSimId);
-  if (!p) return;
-  const sellPrice = parseFloat(document.getElementById("closeSimPrice").value);
-  const reason = document.getElementById("closeSimReason").value;
-  if (!sellPrice) { alert("Inserisci il prezzo di vendita"); return; }
+  if (toKeep.length > 0) {
+    h += `<div class="action-card hold">
+      <div style="font-weight:700;color:#ffd23f;margin-bottom:8px;font-size:11px;letter-spacing:1px;">🟡 MANTIENI (${toKeep.length})</div>
+      ${toKeep.map(p => {
+        const s = lastRanking.find(r => r.ticker === p.ticker);
+        return `<div style="padding:5px 0;font-size:12px;border-top:1px solid #ffd23f22;">
+          <strong>${p.ticker}</strong> <span style="color:var(--dim);font-size:10px;">${p.name}</span>
+          ${s ? `<div style="font-size:10px;color:#ffd23f;">Score: ${s.finalScore?.toFixed(1)}</div>` : ""}
+        </div>`;
+      }).join("")}
+    </div>`;
+  }
 
-  const plPct = ((sellPrice - p.buy_price) / p.buy_price * 100);
-  const plAbs = (sellPrice - p.buy_price) * p.qty;
+  h += `</div><div style="margin-top:10px;font-size:11px;color:#ff6b6b;background:#ff6b6b11;padding:10px;border-radius:8px;">
+    🛑 <strong>STOP LOSS -7%:</strong> Chiudi immediatamente ogni posizione che scende del 7% dal prezzo di acquisto.
+  </div>`;
+  wrap.innerHTML = h;
+}
 
-  await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{
-    status: "closed", sell_price: sellPrice,
-    sell_date: new Date().toISOString().slice(0, 10), sell_reason: reason
-  }]);
-
-  const icon = reason === "target" ? "🎯" : reason === "stop" ? "🛑" : reason === "rotazione" ? "🔄" : "✋";
-  await sendTelegramBoth(`${icon} <b>CHIUSURA SIMULATA — ${p.ticker}</b>\n\n📈 ${p.name||""}\n💰 €${parseFloat(p.buy_price).toFixed(2)} → €${sellPrice.toFixed(2)}\n📊 P&L: <b>${plPct>=0?'+':''}${plPct.toFixed(2)}% (${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)})</b>\n📝 ${reason}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
-
-  document.getElementById("modalCloseSimOverlay").classList.remove("show");
-  await loadAllData();
-  renderAll();
-});
-
-// ── STORICO ───────────────────────────────────────────────────────────
-function renderClosedPositions() {
-  const wrap = document.getElementById("closedSimWrap");
-  if (!wrap) return;
-  if (closedSimPositions.length === 0) {
-    wrap.innerHTML = `<div class="empty-state"><p>Nessuna operazione chiusa</p></div>`;
+// ── WATCHLIST ─────────────────────────────────────────────────────────
+function renderWatchlist() {
+  const wrap = el("watchlistWrap");
+  if (!wrap.innerHTML !== undefined) return;
+  if (watchlist.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Importa il file Excel o carica i titoli default</p></div>`;
     return;
   }
+  el("wlCount").textContent = watchlist.length + " titoli";
+
   let h = `<div style="overflow-x:auto;"><table>
-    <tr><th>Ticker</th><th>Nome</th><th>Settore</th><th>Qty</th><th>Acq.</th><th>Vend.</th><th>P&L %</th><th>P&L €</th><th>Motivo</th><th>Data Vend.</th><th>Profilo</th></tr>`;
-  let totalPL = 0;
-  closedSimPositions.forEach(p => {
-    const pl = ((p.sell_price - p.buy_price) / p.buy_price * 100);
-    const plAbs = (p.sell_price - p.buy_price) * p.qty;
-    totalPL += plAbs;
+    <tr>
+      <th>Ticker</th><th>Nome</th><th>Settore</th><th>P.Rif 01/04</th><th>Attuale</th>
+      <th>Δ dal Rif.</th><th>Score</th><th>Segnale</th><th>Fair Value</th><th>Rialzo</th><th>RSI</th><th></th>
+    </tr>`;
+
+  // Sort by score desc
+  const sorted = [...watchlist].sort((a,b) => (b.score||0)-(a.score||0));
+
+  sorted.forEach(w => {
+    const ref = w.buy_price_ref;
+    const cur = w.current_price_ref;
+    const delta = ref&&cur ? ((cur-ref)/ref*100) : null;
+    const deltaCol = delta>=0?"#00d4b8":"#ff6b6b";
+    const sc = w.score;
+    const scCol = sc>=7?"#00d4b8":sc>=5?"#80ed99":sc>=3?"#ffd23f":"#ff6b6b";
+    const sigTxt = sc>=7?"STRONG BUY":sc>=5?"BUY":sc>=3?"NEUTRO":sc?"SELL":"--";
+    const sigCol = scCol;
+    const fvC = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
+    const fvCol = fvC[w.fair_value_label]||"#7d8aa3";
+    const inPos = simPositions.find(p => p.ticker === w.ticker);
+
+    h += `<tr style="${inPos?'background:#00d4b808;':''}">
+      <td>
+        <a href="https://finance.yahoo.com/chart/${w.ticker}" target="_blank" style="color:#4fa3ff;font-weight:700;">${w.ticker}</a>
+        ${inPos?'<div style="font-size:9px;color:#00d4b8;">✅ IN PORTAFOGLIO</div>':''}
+      </td>
+      <td style="font-size:11px;">${w.name||""}</td>
+      <td style="font-size:10px;color:var(--dim);">${w.sector||""}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">${ref?"€"+ref.toFixed(2):"--"}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">${cur?"€"+cur.toFixed(2):"--"}</td>
+      <td style="font-weight:700;color:${deltaCol};">${delta!=null?(delta>=0?"+":"")+delta.toFixed(1)+"%":"--"}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:15px;color:${scCol||'var(--dim)'};">${sc?sc.toFixed(1):"--"}</td>
+      <td>${sc?`<span style="font-size:10px;font-weight:700;color:${sigCol};background:${sigCol}22;padding:2px 8px;border-radius:5px;">${sigTxt}</span>`:"--"}</td>
+      <td style="font-size:10px;font-weight:700;color:${fvCol};">${w.fair_value_label||"--"}</td>
+      <td style="color:${w.analyst_upside>0?"#00d4b8":"#ff6b6b"};font-size:11px;">${w.analyst_upside!=null?(w.analyst_upside>0?"+":"")+w.analyst_upside+"%":"--"}</td>
+      <td style="font-size:11px;color:${w.rsi>70?"#ff7700":w.rsi<30?"#00d4b8":"var(--dim)"};">${w.rsi?w.rsi.toFixed(0):"--"}</td>
+      <td>
+        ${!inPos?`<button onclick="openBuy('${w.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:700;">+ APRI</button>`:""}
+        <button onclick="removeFromWL('${w.id}')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:13px;margin-left:4px;">✕</button>
+      </td>
+    </tr>`;
+  });
+  h += "</table></div>";
+  wrap.innerHTML = h;
+}
+
+// ── CLASSIFICA ────────────────────────────────────────────────────────
+function renderRanking(ranked, positions) {
+  const wrap = el("rankingWrap");
+  if (!wrap.innerHTML !== undefined) return;
+  if (ranked.length === 0) { wrap.innerHTML = `<div class="empty-state"><p>Esegui l'analisi per vedere la classifica</p></div>`; return; }
+
+  let h = `<div style="overflow-x:auto;"><table>
+    <tr><th>#</th><th>Ticker</th><th>Score</th><th>Tecnico</th><th>RSI</th><th>Fair Value</th><th>Rialzo</th><th>Cash Flow</th><th>Δ dal 01/04</th><th></th></tr>`;
+
+  ranked.forEach((s, i) => {
+    const inPos = positions.find(p => p.ticker === s.ticker);
+    const sc = s.finalScore;
+    const scCol = sc>=7?"#00d4b8":sc>=5?"#80ed99":sc>=3?"#ffd23f":"#ff6b6b";
+    const tCol = s.techColor||"#7d8aa3";
+    const fvC = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
+    const fvCol = fvC[s.fair_value_label]||"#7d8aa3";
+    const delta = s.buy_price_ref&&s.current_price_ref ? ((s.current_price_ref-s.buy_price_ref)/s.buy_price_ref*100) : null;
+
+    h += `<tr style="${inPos?'background:#00d4b808;':''}">
+      <td style="color:var(--dim);font-weight:700;">${i+1}</td>
+      <td><strong>${s.ticker}</strong><div style="font-size:10px;color:var(--dim)">${s.name||""}</div></td>
+      <td><span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:16px;color:${scCol};">${sc?.toFixed(1)}</span></td>
+      <td><span style="font-size:10px;font-weight:700;color:${tCol};background:${tCol}22;padding:2px 8px;border-radius:5px;">${s.techRating||"--"}</span></td>
+      <td style="color:${s.rsi>70?"#ff7700":s.rsi<30?"#00d4b8":"var(--dim)"};">${s.rsi?.toFixed(0)||"--"}</td>
+      <td style="font-size:10px;font-weight:700;color:${fvCol};">${s.fair_value_label||"--"}</td>
+      <td style="color:${s.analyst_upside>0?"#00d4b8":"#ff6b6b"};font-size:11px;">${s.analyst_upside!=null?(s.analyst_upside>0?"+":"")+s.analyst_upside+"%":"--"}</td>
+      <td style="font-size:10px;color:var(--dim);">${s.cash_flow_label||"--"}</td>
+      <td style="color:${delta>=0?"#00d4b8":"#ff6b6b"};font-size:11px;">${delta!=null?(delta>=0?"+":"")+delta.toFixed(1)+"%":"--"}</td>
+      <td>${inPos
+        ?'<span style="color:#00d4b8;font-size:10px;font-weight:700;">✅ IN PORT.</span>'
+        :`<button onclick="openBuy('${s.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;">+ APRI</button>`
+      }</td>
+    </tr>`;
+  });
+  h += "</table></div>";
+  wrap.innerHTML = h;
+}
+
+// ── STORICO ───────────────────────────────────────────────────────────
+function renderClosedTable() {
+  const wrap = el("storWrap");
+  if (!wrap.innerHTML !== undefined) return;
+  if (closedPositions.length === 0) { wrap.innerHTML = `<div class="empty-state"><p>Nessuna operazione chiusa</p></div>`; return; }
+
+  let totPL = 0;
+  let h = `<div style="overflow-x:auto;"><table>
+    <tr><th>Ticker</th><th>Nome</th><th>Qty</th><th>Acquisto</th><th>Vendita</th><th>P&L %</th><th>P&L €</th><th>Motivo</th><th>Data Acq.</th><th>Data Vend.</th></tr>`;
+  closedPositions.forEach(p => {
+    const pl = ((p.sell_price-p.buy_price)/p.buy_price*100);
+    const plAbs = (p.sell_price-p.buy_price)*p.qty;
+    totPL += plAbs;
     const icons = {target:"🎯",stop:"🛑",rotazione:"🔄",manuale:"✋"};
     h += `<tr>
       <td><strong>${p.ticker}</strong></td>
       <td style="font-size:11px;">${p.name||""}</td>
-      <td style="font-size:10px;color:var(--dim);">${p.sector||""}</td>
       <td>${p.qty}</td>
       <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.buy_price).toFixed(2)}</td>
       <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.sell_price).toFixed(2)}</td>
       <td><span class="chip ${plAbs>=0?'up':'down'}">${pl>=0?'+':''}${pl.toFixed(2)}%</span></td>
       <td style="font-weight:700;color:${plAbs>=0?'#00d4b8':'#ff6b6b'};">${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)}</td>
       <td>${icons[p.sell_reason]||""} ${p.sell_reason||""}</td>
+      <td style="font-size:10px;color:var(--dim);">${p.buy_date||""}</td>
       <td style="font-size:10px;color:var(--dim);">${p.sell_date||""}</td>
-      <td style="font-size:10px;color:var(--dim);">${p.profile||""}</td>
     </tr>`;
   });
-  h += `<tr style="border-top:2px solid var(--line);font-weight:700;">
-    <td colspan="7">TOTALE REALIZZATO</td>
-    <td style="color:${totalPL>=0?'#00d4b8':'#ff6b6b'};">${totalPL>=0?'+':''}€${Math.abs(totalPL).toFixed(0)}</td>
+  h += `<tr style="border-top:2px solid var(--line);background:var(--panel2);">
+    <td colspan="6" style="padding:10px 8px;font-weight:700;">TOTALE REALIZZATO</td>
+    <td style="font-weight:700;color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+':''}€${Math.abs(totPL).toFixed(0)}</td>
     <td colspan="3"></td>
   </tr>`;
   h += "</table></div>";
@@ -657,422 +718,314 @@ function renderClosedPositions() {
 }
 
 // ── STATISTICHE ───────────────────────────────────────────────────────
-function renderSimStats() {
-  const wrap = document.getElementById("simStatsWrap");
-  if (!wrap) return;
-  if (closedSimPositions.length === 0) {
-    wrap.innerHTML = `<div class="empty-state"><p>Chiudi operazioni per vedere le statistiche</p></div>`;
-    return;
-  }
-  const winners = closedSimPositions.filter(p => p.sell_price > p.buy_price);
-  const losers = closedSimPositions.filter(p => p.sell_price <= p.buy_price);
-  const totalPL = closedSimPositions.reduce((s, p) => s + (p.sell_price - p.buy_price) * p.qty, 0);
-  const totalGains = winners.reduce((s, p) => s + (p.sell_price - p.buy_price) * p.qty, 0);
-  const totalLosses = Math.abs(losers.reduce((s, p) => s + (p.sell_price - p.buy_price) * p.qty, 0));
-  const pf = totalLosses > 0 ? (totalGains / totalLosses).toFixed(2) : "∞";
-  const wr = (winners.length / closedSimPositions.length * 100).toFixed(1);
-  const avgWin = winners.length > 0 ? (totalGains / winners.length).toFixed(0) : 0;
-  const avgLoss = losers.length > 0 ? (totalLosses / losers.length).toFixed(0) : 0;
-  const best = closedSimPositions.reduce((a, b) => ((b.sell_price-b.buy_price)/b.buy_price) > ((a.sell_price-a.buy_price)/a.buy_price) ? b : a);
-  const worst = closedSimPositions.reduce((a, b) => ((b.sell_price-b.buy_price)/b.buy_price) < ((a.sell_price-a.buy_price)/a.buy_price) ? b : a);
-  const byReason = {};
-  closedSimPositions.forEach(p => { byReason[p.sell_reason] = (byReason[p.sell_reason] || 0) + 1; });
-
-  wrap.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;">
-      <div class="card"><div class="v" style="color:${totalPL>=0?'#00d4b8':'#ff6b6b'};">${totalPL>=0?'+':''}€${Math.abs(totalPL).toFixed(0)}</div><div class="l">P&L Realizzato</div></div>
-      <div class="card"><div class="v">${closedSimPositions.length}</div><div class="l">Trade Totali</div></div>
-      <div class="card"><div class="v" style="color:#00d4b8;">${winners.length}</div><div class="l">Vincenti</div></div>
-      <div class="card"><div class="v" style="color:#ff6b6b;">${losers.length}</div><div class="l">Perdenti</div></div>
-      <div class="card"><div class="v" style="color:${parseFloat(wr)>=50?'#00d4b8':'#ff6b6b'};">${wr}%</div><div class="l">Win Rate</div></div>
-      <div class="card"><div class="v" style="color:${parseFloat(pf)>=1?'#00d4b8':'#ff6b6b'};">${pf}</div><div class="l">Profit Factor</div></div>
-      <div class="card"><div class="v" style="color:#00d4b8;">+€${avgWin}</div><div class="l">Media Vincente</div></div>
-      <div class="card"><div class="v" style="color:#ff6b6b;">-€${avgLoss}</div><div class="l">Media Perdente</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-      <div class="card"><div style="font-size:10px;color:var(--dim);margin-bottom:4px;">🏆 MIGLIOR TRADE</div><div style="font-weight:700;color:#00d4b8;">${best.ticker} +${((best.sell_price-best.buy_price)/best.buy_price*100).toFixed(1)}%</div><div style="font-size:10px;color:var(--dim);">${best.sell_date||""}</div></div>
-      <div class="card"><div style="font-size:10px;color:var(--dim);margin-bottom:4px;">📉 PEGGIOR TRADE</div><div style="font-weight:700;color:#ff6b6b;">${worst.ticker} ${((worst.sell_price-worst.buy_price)/worst.buy_price*100).toFixed(1)}%</div><div style="font-size:10px;color:var(--dim);">${worst.sell_date||""}</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
-      ${Object.entries(byReason).map(([r, n]) => {
-        const icons = {target:'🎯',stop:'🛑',rotazione:'🔄',manuale:'✋'};
-        return `<div class="card"><div class="v">${n}</div><div class="l">${icons[r]||''} ${r}</div></div>`;
-      }).join('')}
-    </div>`;
+function renderStats() {
+  const wrap = el("statsWrap");
+  if (!wrap.innerHTML !== undefined) return;
+  if (closedPositions.length === 0) { wrap.innerHTML = `<div class="empty-state"><p>Chiudi operazioni per vedere le statistiche</p></div>`; return; }
+  const win = closedPositions.filter(p => p.sell_price > p.buy_price);
+  const los = closedPositions.filter(p => p.sell_price <= p.buy_price);
+  const totPL = closedPositions.reduce((s,p) => s+(p.sell_price-p.buy_price)*p.qty, 0);
+  const totG = win.reduce((s,p) => s+(p.sell_price-p.buy_price)*p.qty, 0);
+  const totL = Math.abs(los.reduce((s,p) => s+(p.sell_price-p.buy_price)*p.qty, 0));
+  const pf = totL>0?(totG/totL).toFixed(2):"∞";
+  const wr = (win.length/closedPositions.length*100).toFixed(1);
+  wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+    <div class="card"><div class="v" style="color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+':''}€${Math.abs(totPL).toFixed(0)}</div><div class="l">P&L Realizzato</div></div>
+    <div class="card"><div class="v">${closedPositions.length}</div><div class="l">Trade Totali</div></div>
+    <div class="card"><div class="v" style="color:#00d4b8;">${win.length}</div><div class="l">Vincenti</div></div>
+    <div class="card"><div class="v" style="color:#ff6b6b;">${los.length}</div><div class="l">Perdenti</div></div>
+    <div class="card"><div class="v" style="color:${parseFloat(wr)>=50?'#00d4b8':'#ff6b6b'};">${wr}%</div><div class="l">Win Rate</div></div>
+    <div class="card"><div class="v" style="color:${parseFloat(pf)>=1?'#00d4b8':'#ff6b6b'};">${pf}</div><div class="l">Profit Factor</div></div>
+    <div class="card"><div class="v" style="color:#00d4b8;">+€${win.length>0?(totG/win.length).toFixed(0):0}</div><div class="l">Media Vincente</div></div>
+    <div class="card"><div class="v" style="color:#ff6b6b;">-€${los.length>0?(totL/los.length).toFixed(0):0}</div><div class="l">Media Perdente</div></div>
+  </div>`;
 }
 
-// ── SIM CHART ─────────────────────────────────────────────────────────
-function renderSimChart() {
-  const ctx = document.getElementById("chartSimCapital");
+// ── EQUITY CHART ──────────────────────────────────────────────────────
+function renderEquityChart() {
+  const ctx = document.getElementById("chartEquity");
   if (!ctx) return;
-  const capital = parseFloat(document.getElementById("simCapital").value) || 20000;
-
-  // Build equity curve: start + closed trades sorted by date
-  const sorted = [...closedSimPositions].sort((a, b) => (a.sell_date||"").localeCompare(b.sell_date||""));
-  let equity = capital;
-  const labels = ["01/04/2025"], values = [capital];
-  sorted.forEach(p => {
-    equity += (p.sell_price - p.buy_price) * p.qty;
-    labels.push(p.sell_date||"");
-    values.push(parseFloat(equity.toFixed(0)));
-  });
-  // Add current value
-  let currentTotal = equity;
-  simPositions.forEach(p => { currentTotal += (p.current_price - p.buy_price) * p.qty; });
-  labels.push("Oggi");
-  values.push(parseFloat(currentTotal.toFixed(0)));
-
-  if (chartSimCapital) chartSimCapital.destroy();
-  chartSimCapital = new Chart(ctx.getContext("2d"), {
-    type: "line",
-    data: { labels, datasets: [{
-      label: "Capitale Simulato",
-      data: values,
-      borderColor: "#d4a017",
-      backgroundColor: "#d4a01722",
-      fill: true, tension: 0.3, pointRadius: 4,
-      pointBackgroundColor: "#d4a017"
-    }]},
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: "#eef1f7", font: { family: "JetBrains Mono", size: 10 } } } },
-      scales: {
-        x: { ticks: { color: "#7d8aa3", font: { size: 10 } }, grid: { color: "#1e2d45" } },
-        y: { ticks: { color: "#7d8aa3", font: { size: 10 }, callback: v => "€" + v.toLocaleString("it-IT") }, grid: { color: "#1e2d45" } }
-      }
-    }
+  const capital = parseFloat(document.getElementById("simCapital")?.value||"20000");
+  const sorted = [...closedPositions].sort((a,b) => (a.sell_date||"").localeCompare(b.sell_date||""));
+  let eq = capital;
+  const labels = ["01/04/2025"], vals = [capital];
+  sorted.forEach(p => { eq += (p.sell_price-p.buy_price)*p.qty; labels.push(p.sell_date||""); vals.push(parseFloat(eq.toFixed(0))); });
+  let curEq = eq;
+  simPositions.forEach(p => { curEq += ((p.current_price||p.buy_price)-p.buy_price)*p.qty; });
+  labels.push("Oggi"); vals.push(parseFloat(curEq.toFixed(0)));
+  if (chartEquity) chartEquity.destroy();
+  chartEquity = new Chart(ctx.getContext("2d"), {
+    type:"line",
+    data:{labels, datasets:[{label:"Equity Simulata",data:vals,borderColor:"#d4a017",backgroundColor:"#d4a01722",fill:true,tension:0.3,pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#eef1f7",font:{size:10}}}},scales:{x:{ticks:{color:"#7d8aa3",font:{size:10}},grid:{color:"#1e2d45"}},y:{ticks:{color:"#7d8aa3",font:{size:10},callback:v=>"€"+v.toLocaleString("it-IT")},grid:{color:"#1e2d45"}}}}
   });
 }
 
-// ── UNIVERSO ──────────────────────────────────────────────────────────
-function renderUniverse() {
-  const wrap = document.getElementById("universeWrap");
-  if (!wrap) return;
-  const count = document.getElementById("universeCount");
-  if (count) count.textContent = simUniverse.length + " titoli";
-  if (simUniverse.length === 0) {
-    wrap.innerHTML = `<div class="empty-state"><div class="ic">📊</div><p>Importa il file Excel o carica il default</p></div>`;
-    return;
+// ── OPEN/CLOSE POSITIONS ──────────────────────────────────────────────
+window.openBuy = function(ticker) {
+  const w = watchlist.find(x => x.ticker === ticker);
+  const sel = el("buyTicker");
+  if (sel.innerHTML !== undefined) {
+    sel.innerHTML = watchlist.map(t=>`<option value="${t.ticker}" ${t.ticker===ticker?'selected':''}>${t.ticker} — ${t.name}</option>`).join("");
   }
-  let h = `<div style="overflow-x:auto;"><table>
-    <tr><th>Ticker</th><th>Nome</th><th>Settore</th><th>P.Rif. 01/04</th><th>Prezzo Att.</th><th>Δ dal Ref.</th><th>Fair Value</th><th>Rialzo</th><th></th></tr>`;
-  simUniverse.forEach(t => {
-    const ref = t.buy_price_ref;
-    const cur = t.current_price_ref;
-    const delta = ref && cur ? ((cur - ref) / ref * 100) : null;
-    const deltaCol = delta >= 0 ? "#00d4b8" : "#ff6b6b";
-    const fvColors = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
-    const fvCol = fvColors[t.fair_value_label] || "#7d8aa3";
-    h += `<tr>
-      <td><strong>${t.ticker}</strong></td>
-      <td style="font-size:11px;">${t.name||""}</td>
-      <td style="font-size:10px;color:var(--dim);">${t.sector||""}</td>
-      <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">${ref ? "€"+ref.toFixed(2) : "--"}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">${cur ? "€"+cur.toFixed(2) : "--"}</td>
-      <td style="color:${deltaCol};font-weight:700;">${delta!=null?(delta>=0?"+":"")+delta.toFixed(1)+"%":"--"}</td>
-      <td style="font-size:10px;font-weight:700;color:${fvCol};">${t.fair_value_label||"--"}</td>
-      <td style="font-size:11px;color:${t.analyst_upside>0?"#00d4b8":"#ff6b6b"};">${t.analyst_upside!=null?(t.analyst_upside>0?"+":"")+t.analyst_upside+"%":"--"}</td>
-      <td>
-        <button onclick="openManualFromUniverse('${t.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:700;">+ APRI</button>
-        <button onclick="removeFromUniverse('${t.id}')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:14px;margin-left:4px;">✕</button>
-      </td>
-    </tr>`;
-  });
-  h += "</table></div>";
-  wrap.innerHTML = h;
-}
+  if (el("buyPrice").value !== undefined) el("buyPrice").value = w?.current_price_ref?.toFixed(2)||"";
+  document.getElementById("modalBuyOverlay").classList.add("show");
+};
+window.openManualPosition = window.openBuy.bind(null, "");
 
-window.openManualFromUniverse = function(ticker) {
-  const t = simUniverse.find(x => x.ticker === ticker);
-  if (!t) return;
-  const sel = document.getElementById("openSimTicker");
-  const opt = Array.from(sel.options).find(o => o.value === ticker);
-  if (!opt) {
-    const newOpt = document.createElement("option");
-    newOpt.value = ticker;
-    newOpt.text = `${ticker} — ${t.name}`;
-    sel.appendChild(newOpt);
+document.getElementById("btnCancelBuy")?.addEventListener("click", () => { document.getElementById("modalBuyOverlay").classList.remove("show"); });
+
+document.getElementById("btnConfirmBuy")?.addEventListener("click", async () => {
+  const ticker = el("buyTicker").value;
+  const buyPrice = parseFloat(el("buyPrice").value);
+  const qty = parseInt(el("buyQty").value);
+  const profile = el("buyProfile").value;
+  const buyDate = el("buyDate").value || "2025-04-01";
+  if (!ticker || !buyPrice || !qty) { alert("Compila tutti i campi"); return; }
+
+  const capital = parseFloat(el("simCapital")?.value||"20000");
+  const invested = simPositions.reduce((s,p)=>s+(p.buy_price||0)*(p.qty||0),0);
+  const liq = capital - invested;
+  const newCost = buyPrice * qty;
+  if (newCost > liq + 1) {
+    if (!confirm(`⚠ Questa posizione costa €${newCost.toFixed(0)} ma hai solo €${liq.toFixed(0)} di liquidità. Vuoi procedere comunque?`)) return;
   }
-  sel.value = ticker;
-  document.getElementById("openSimPrice").value = t.current_price_ref ? t.current_price_ref.toFixed(2) : "";
-  document.getElementById("modalOpenSimOverlay").classList.add("show");
-};
 
-window.removeFromUniverse = async function(id) {
-  if (!confirm("Rimuovere questo titolo?")) return;
-  await sbFetch(`sim_universe?id=eq.${id}`, "DELETE");
-  simUniverse = simUniverse.filter(t => t.id !== id);
-  renderUniverse();
-  renderHero();
-};
-
-// Import Excel
-document.getElementById("btnImportUniverse").addEventListener("click", () => {
-  document.getElementById("universeExcelInput").click();
-});
-
-document.getElementById("universeExcelInput").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async (ev) => {
-    try {
-      const wb = XLSX.read(ev.target.result, { type: "binary" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      let headerRowIdx = 0, headerRow = [];
-      for (let i = 0; i < Math.min(data.length, 15); i++) {
-        const rowStr = (data[i]||[]).map(c => String(c||"").toLowerCase()).join(",");
-        if (rowStr.includes("ticker") || rowStr.includes("nome")) { headerRowIdx = i; headerRow = data[i]; break; }
-      }
-      const headers = headerRow.map(h => String(h||"").toLowerCase());
-      const iIdx = (name) => headers.findIndex(h => h.includes(name));
-      // Colonne file: A=Nome, B=Full Ticker, C=Ticker, F=Cash Flow, G=Rialzo, H=Fair Value, L=MktCap, R=P/E
-      const colNome = iIdx("nome") !== -1 ? iIdx("nome") : 0;
-      // Preferisci "Full Ticker" (col B) che ha formato NOME.MI
-      const colTicker = iIdx("full ticker") !== -1 ? iIdx("full ticker") : (iIdx("ticker") !== -1 ? iIdx("ticker") : 1);
-      const colFairLabel = iIdx("fair value") !== -1 ? iIdx("fair value") : 7;
-      const colAnalyst = iIdx("rialzo") !== -1 ? iIdx("rialzo") : 6;
-      const colCash = iIdx("flusso di cassa") !== -1 ? iIdx("flusso di cassa") : 5;
-      const colPE = iIdx("prezzo/utile") !== -1 ? iIdx("prezzo/utile") : (iIdx("p/e") !== -1 ? iIdx("p/e") : 17);
-      const colSector = iIdx("settore") !== -1 ? iIdx("settore") : -1;
-      const colMktCap = iIdx("capitaliz") !== -1 ? iIdx("capitaliz") : 11;
-
-      const rows = [];
-      for (const row of data.slice(headerRowIdx + 1)) {
-        if (!row) continue;
-        const rawTicker = row[colTicker];
-        if (!rawTicker || String(rawTicker).trim() === "") continue;
-        const ticker = String(rawTicker).trim().toUpperCase();
-        const analystRaw = colAnalyst !== -1 && row[colAnalyst] != null
-          ? parseFloat((parseFloat(row[colAnalyst]) * (parseFloat(row[colAnalyst]) < 1 ? 100 : 1)).toFixed(1)) : null;
-        const peRaw = colPE !== -1 && row[colPE] != null ? parseFloat(parseFloat(row[colPE]).toFixed(1)) : null;
-        const mktCapRaw = colMktCap !== -1 && row[colMktCap] != null ? parseFloat((parseFloat(row[colMktCap])/1e9).toFixed(2)) : null;
-        rows.push({
-          id: `simuni_${ticker}_${currentUser}`,
-          user_id: currentUser, ticker,
-          name: row[colNome] || ticker,
-          sector: colSector !== -1 && row[colSector] ? String(row[colSector]) : "Altro",
-          pe: peRaw,
-          market_cap: mktCapRaw,
-          fair_value_label: colFairLabel !== -1 ? row[colFairLabel] || null : null,
-          analyst_upside: analystRaw,
-          cash_flow_label: colCash !== -1 ? row[colCash] || null : null
-        });
-      }
-
-      if (rows.length === 0) { alert("Nessun titolo trovato."); return; }
-      await sbFetch("sim_universe?on_conflict=id", "POST", rows);
-      await loadAllData();
-      renderAll();
-      e.target.value = "";
-      // Aggiorna prezzi
-      setStatus("⏳ Aggiornamento prezzi universo...");
-      await refreshUniversePrices();
-      alert(`✅ ${rows.length} titoli importati.`);
-    } catch(err) { alert("Errore: " + err.message); }
+  const w = watchlist.find(x => x.ticker === ticker);
+  const pos = {
+    id: "simpos_"+Date.now()+"_"+ticker,
+    user_id: currentUser, ticker,
+    name: w?.name||ticker, qty, buy_price: buyPrice, buy_date: buyDate,
+    currency: "EUR", sector: w?.sector||"Altro",
+    stop_loss: parseFloat((buyPrice*0.93).toFixed(4)),
+    profile: SIM_PROFILES[profile]?.name||profile,
+    status: "open", current_price: buyPrice,
+    score: w?.score||null
   };
-  reader.readAsBinaryString(file);
+  try {
+    await sbFetch("sim_positions?on_conflict=id", "POST", [pos]);
+    document.getElementById("modalBuyOverlay").classList.remove("show");
+    await loadAllData();
+    renderAll();
+    await sendTG(`📥 <b>APERTURA SIMULATA — ${ticker}</b>\n\n📈 ${w?.name||ticker}\n💰 €${buyPrice.toFixed(2)} × ${qty} = €${(buyPrice*qty).toFixed(0)}\n🛑 Stop: €${(buyPrice*0.93).toFixed(2)}\n📅 ${buyDate}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+  } catch(e) { alert("Errore: "+e.message); }
 });
 
-document.getElementById("btnClearUniverse").addEventListener("click", async () => {
-  if (!confirm("Vuoi eliminare tutti i titoli dall'universo?")) return;
-  await sbFetch(`sim_universe?user_id=eq.${currentUser}`, "DELETE");
-  simUniverse = [];
-  renderUniverse();
-  renderHero();
+window.openClose = function(id) {
+  closingId = id;
+  const p = simPositions.find(x=>x.id===id);
+  if (p) {
+    el("closeInfo").textContent = `${p.ticker} | Acq: €${parseFloat(p.buy_price).toFixed(2)} | Stop: €${p.stop_loss?parseFloat(p.stop_loss).toFixed(2):"--"}`;
+    if (el("closePrice").value !== undefined) el("closePrice").value = p.current_price||p.buy_price;
+  }
+  document.getElementById("modalCloseOverlay").classList.add("show");
+};
+
+document.getElementById("btnCancelClose")?.addEventListener("click", () => { document.getElementById("modalCloseOverlay").classList.remove("show"); });
+
+document.getElementById("btnConfirmClose")?.addEventListener("click", async () => {
+  const p = simPositions.find(x=>x.id===closingId);
+  if (!p) return;
+  const sellPrice = parseFloat(el("closePrice").value);
+  const reason = el("closeReason").value;
+  if (!sellPrice) { alert("Inserisci il prezzo"); return; }
+  const plPct = ((sellPrice-p.buy_price)/p.buy_price*100);
+  const plAbs = (sellPrice-p.buy_price)*p.qty;
+  try {
+    await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{status:"closed",sell_price:sellPrice,sell_date:new Date().toISOString().slice(0,10),sell_reason:reason}]);
+    const icon = {target:"🎯",stop:"🛑",rotazione:"🔄",manuale:"✋"}[reason]||"📤";
+    await sendTG(`${icon} <b>CHIUSURA SIMULATA — ${p.ticker}</b>\n\n€${parseFloat(p.buy_price).toFixed(2)} → €${sellPrice.toFixed(2)}\nP&L: <b>${plPct>=0?'+':''}${plPct.toFixed(2)}% (${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)})</b>\n${reason}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+    document.getElementById("modalCloseOverlay").classList.remove("show");
+    await loadAllData();
+    renderAll();
+  } catch(e) { alert("Errore: "+e.message); }
 });
 
-document.getElementById("btnLoadDefault")?.addEventListener("click", async () => {
-  if (!confirm("Caricare i 10 titoli MIB di default con prezzi al 1 Aprile 2025?")) return;
-  await loadDefaultUniverse();
-  await loadAllData();
+// ── ANALISI E SIMULAZIONE ─────────────────────────────────────────────
+window.runAnalysis = async function() {
+  if (watchlist.length < 3) { alert("Aggiungi almeno 3 titoli nella watchlist."); return; }
+  const profile = el("simProfile").value;
+  const prof = SIM_PROFILES[profile];
+  setStatus(`⏳ Analisi ${watchlist.length} titoli...`);
+
+  const scored = [];
+  for (const w of watchlist) {
+    try {
+      const data = await fetchYahoo(w.ticker, "1y", "1d");
+      const result = data?.chart?.result?.[0];
+      const quote = result?.indicators?.quote?.[0]||{};
+      const closes = (quote.close||[]).filter(v=>v!=null);
+      const highs = quote.high||[];
+      const lows = quote.low||[];
+      if (closes.length < 20) continue;
+      const sd = calcScore(closes, highs, lows, w);
+      const price = result?.meta?.regularMarketPrice;
+      if (price) { w.current_price_ref = price; }
+      w.rsi = sd.rsi;
+      w.score = sd.composite;
+      w.techRating = sd.techRating;
+      w.techColor = sd.techColor;
+      // Save updated watchlist item
+      try { await sbFetch("sim_universe?on_conflict=id", "POST", [{...w, rsi: sd.rsi, score: sd.composite, current_price_ref: price||w.current_price_ref}]); } catch(e) {}
+      scored.push({...w, finalScore: sd.composite, techRating: sd.techRating, techColor: sd.techColor, rsi: sd.rsi});
+      setStatus(`⏳ ${w.ticker}: Score ${sd.composite} (${scored.length}/${watchlist.length})`);
+      await new Promise(r=>setTimeout(r,300));
+    } catch(e) { continue; }
+  }
+
+  scored.sort((a,b) => b.finalScore-a.finalScore);
+  lastRanking = scored;
+
+  // Update scores in positions
+  simPositions.forEach(p => {
+    const s = scored.find(x=>x.ticker===p.ticker);
+    if (s) p.score = s.finalScore;
+  });
+
   renderAll();
-});
+  renderRanking(scored, simPositions);
+  setStatus(`✅ Analisi completata — ${scored.length} titoli analizzati`);
+  await sendTG(`📊 <b>ANALISI COMPLETATA — ${prof.icon} ${prof.name}</b>\n\n🏆 Top 3: ${scored.slice(0,3).map(s=>s.ticker+"("+s.finalScore.toFixed(1)+")").join(", ")}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+  switchTab("Classifica");
+};
 
 // ── REFRESH PREZZI ────────────────────────────────────────────────────
-window.refreshSimPrices = async function() {
-  if (simPositions.length === 0) { setStatus("Nessuna posizione aperta."); return; }
+window.refreshPrices = async function() {
   setStatus("⏳ Aggiornamento prezzi...");
-  const updates = [];
   for (const p of simPositions) {
     try {
       const data = await fetchYahoo(p.ticker, "1d", "1d");
       const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
       if (price) {
         p.current_price = price;
-        updates.push({ id: p.id, current_price: price });
+        await sbFetch("sim_positions?on_conflict=id","POST",[{id:p.id,current_price:price}]);
         if (p.stop_loss && price <= p.stop_loss) {
-          await sendTelegramBoth(`🛑 <b>STOP LOSS SIMULATO — ${p.ticker}</b>\n\n💰 €${price.toFixed(2)} ≤ Stop €${parseFloat(p.stop_loss).toFixed(2)}\n⚠️ Considera di chiudere questa posizione!\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+          await sendTG(`🛑 <b>STOP LOSS SIMULATO — ${p.ticker}</b>\n\n€${price.toFixed(2)} ≤ Stop €${parseFloat(p.stop_loss).toFixed(2)}\n⚠️ Chiudi questa posizione!\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
         }
       }
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r=>setTimeout(r,400));
     } catch(e) {}
   }
-  if (updates.length > 0) {
-    await sbFetch("sim_positions?on_conflict=id", "POST", simPositions.map(p => ({ id: p.id, current_price: p.current_price })));
+  for (const w of watchlist) {
+    try {
+      const data = await fetchYahoo(w.ticker,"1d","1d");
+      const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (price) { w.current_price_ref = price; await sbFetch("sim_universe?on_conflict=id","POST",[{id:w.id,current_price_ref:price}]); }
+      await new Promise(r=>setTimeout(r,300));
+    } catch(e) {}
   }
-  await refreshUniversePrices();
   renderAll();
-  setStatus(`✅ Prezzi aggiornati — ${updates.length} posizioni`);
+  setStatus(`✅ Prezzi aggiornati`);
 };
 
-async function refreshUniversePrices() {
-  const updates = [];
-  for (const t of simUniverse) {
-    try {
-      const data = await fetchYahoo(t.ticker, "1d", "1d");
-      const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (price) {
-        t.current_price_ref = price;
-        updates.push({ id: t.id, current_price_ref: price });
-      }
-      await new Promise(r => setTimeout(r, 300));
-    } catch(e) {}
-  }
-  if (updates.length > 0) {
-    await sbFetch("sim_universe?on_conflict=id", "POST", updates);
-  }
-  renderUniverse();
-}
+// ── WATCHLIST MANAGEMENT ──────────────────────────────────────────────
+window.removeFromWL = async function(id) {
+  if (!confirm("Rimuovere questo titolo?")) return;
+  try {
+    await sbFetch(`sim_universe?id=eq.${id}`,"DELETE");
+    watchlist = watchlist.filter(w=>w.id!==id);
+    renderWatchlist();
+    renderHero();
+  } catch(e) { alert("Errore: "+e.message); }
+};
 
-// ── SIMULAZIONE AUTOMATICA ────────────────────────────────────────────
-window.runSimulation = async function() {
-  if (simUniverse.length < 5) {
-    alert("⚠ Aggiungi almeno 5 titoli nell'universo.");
-    switchTab("Universo"); return;
-  }
-  const profile = document.getElementById("simProfile").value;
-  const capital = parseFloat(document.getElementById("simCapital").value) || 20000;
-  const prof = SIM_PROFILES[profile];
-  setStatus(`⏳ Analisi ${simUniverse.length} titoli per ${prof.icon} ${prof.name}...`);
-
-  const scored = [];
-  for (const t of simUniverse) {
-    try {
-      const data = await fetchYahoo(t.ticker, "1y", "1d");
-      const result = data?.chart?.result?.[0];
-      const quote = result?.indicators?.quote?.[0] || {};
-      const closes = (quote.close || []).filter(v => v != null);
-      const highs = quote.high || [];
-      const lows = quote.low || [];
-      if (closes.length < 20) continue;
-      const sd = calcCompositeScore(closes, highs, lows, t);
-      const price = result?.meta?.regularMarketPrice || t.current_price_ref;
-      const low52 = result?.meta?.fiftyTwoWeekLow;
-      const dist52 = price && low52 ? ((price - low52) / low52 * 100) : null;
-      scored.push({ ...t, price, scoreData: sd, dist52, finalScore: sd.composite });
-      setStatus(`⏳ ${t.ticker}: Score ${sd.composite} (${scored.length}/${simUniverse.length})`);
-      await new Promise(r => setTimeout(r, 300));
-    } catch(e) { continue; }
-  }
-
-  scored.sort((a, b) => b.finalScore - a.finalScore);
-  lastRanking = scored;
-
-  const selected = selectByProfile(scored, prof);
-  const perTicker = capital / selected.length;
-  const today = new Date().toISOString().slice(0, 10);
-  const newPositions = [];
-
-  for (const s of selected) {
-    if (simPositions.find(p => p.ticker === s.ticker)) continue;
-    const price = s.price || s.current_price_ref;
-    const qty = price ? Math.floor(perTicker / price) : 1;
-    newPositions.push({
-      id: "simpos_" + Date.now() + "_" + s.ticker,
-      user_id: currentUser, ticker: s.ticker, name: s.name,
-      qty, buy_price: price, buy_date: today,
-      currency: "EUR", sector: s.sector || "Altro",
-      stop_loss: price ? parseFloat((price * 0.93).toFixed(4)) : null,
-      profile: prof.name, status: "open", current_price: price
-    });
-    await new Promise(r => setTimeout(r, 50));
-  }
-
-  if (newPositions.length > 0) await sbFetch("sim_positions?on_conflict=id", "POST", newPositions);
-
-  const currentTickers = simPositions.map(p => p.ticker);
-  const toSell = simPositions.filter(p => !selected.find(s => s.ticker === p.ticker));
-  const toAdd = selected.filter(s => !currentTickers.includes(s.ticker));
-  const toKeep = selected.filter(s => currentTickers.includes(s.ticker));
-
-  renderRanking(scored, selected);
-  renderRotationActions(toAdd, toSell, toKeep, prof, perTicker);
-
-  await sendTelegramBoth(`🔄 <b>SIMULAZIONE — ${prof.icon} ${prof.name}</b>\n\n💰 €${capital.toLocaleString("it-IT")} | ${simUniverse.length} titoli analizzati\n🟢 Apri: ${toAdd.length} | 🔴 Chiudi: ${toSell.length} | 🟡 Tieni: ${toKeep.length}\n🏆 Top 3: ${scored.slice(0,3).map(s=>s.ticker+"("+s.finalScore.toFixed(1)+")").join(", ")}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
-
+document.getElementById("btnLoadDefault")?.addEventListener("click", async () => {
+  if (!confirm("Caricare i 10 titoli MIB default con prezzi al 1 Aprile 2025?")) return;
+  watchlist = [];
+  await loadDefaultTickers();
   await loadAllData();
   renderAll();
-  setStatus(`✅ Analisi completata — ${newPositions.length} nuove posizioni su ${scored.length} titoli`);
-  switchTab("Classifica");
-};
+});
 
-function selectByProfile(scored, prof) {
-  const sel = [], sc = {};
-  const total = Object.values(prof.weights).reduce((s,v)=>s+v,0);
-  const slots = {};
-  Object.entries(prof.weights).forEach(([sec,pct]) => { slots[sec] = Math.max(1,Math.round((pct/total)*prof.n)); });
-  for (const s of scored) {
-    const sec = s.sector || "Altro";
-    const match = Object.keys(slots).find(k => sec.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(sec.toLowerCase()));
-    if (match && (sc[match]||0) < slots[match]) { sel.push(s); sc[match]=(sc[match]||0)+1; }
-    if (sel.length >= prof.n) break;
-  }
-  for (const s of scored) {
-    if (sel.length >= prof.n) break;
-    if (!sel.find(x=>x.ticker===s.ticker)) sel.push(s);
-  }
-  return sel.slice(0, prof.n);
-}
+document.getElementById("btnImportWL")?.addEventListener("click", () => { el("wlExcelInput").click(); });
 
-function renderRanking(scored, selected) {
-  const wrap = document.getElementById("rankingWrap");
-  if (!wrap) return;
-  let h = `<div style="overflow-x:auto;"><table>
-    <tr><th>#</th><th>Ticker</th><th>Score</th><th>Tecnico</th><th>RSI</th><th>+Min 52W</th><th>Fair Value</th><th>Rialzo</th><th>Stato</th></tr>`;
-  scored.forEach((s, i) => {
-    const inSel = selected.find(x => x.ticker === s.ticker);
-    const sc = s.finalScore;
-    const scCol = sc>=7?"#00d4b8":sc>=5?"#80ed99":sc>=3?"#ffd23f":"#ff6b6b";
-    const tCol = s.scoreData?.techColor||"#7d8aa3";
-    const fvC = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
-    h += `<tr style="${inSel?'background:#d4a01710;':''}">
-      <td style="color:var(--dim);">${i+1}</td>
-      <td><strong>${s.ticker}</strong><div style="font-size:10px;color:var(--dim)">${s.name||""}</div></td>
-      <td><span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:16px;color:${scCol};">${sc.toFixed(1)}</span></td>
-      <td><span style="font-size:10px;font-weight:700;color:${tCol};background:${tCol}22;padding:2px 8px;border-radius:6px;">${s.scoreData?.techRating||"--"}</span></td>
-      <td style="color:${s.scoreData?.rsi>70?'#ff7700':s.scoreData?.rsi<30?'#00d4b8':'var(--dim)'};">${s.scoreData?.rsi?.toFixed(0)||"--"}</td>
-      <td style="color:var(--dim);font-size:11px;">${s.dist52!=null?"+"+s.dist52.toFixed(0)+"%":"--"}</td>
-      <td style="font-size:10px;font-weight:700;color:${fvC[s.fair_value_label]||'#7d8aa3'};">${s.fair_value_label||"--"}</td>
-      <td style="color:${s.analyst_upside>0?'#00d4b8':'#ff6b6b'};font-size:11px;">${s.analyst_upside!=null?(s.analyst_upside>0?"+":"")+s.analyst_upside+"%":"--"}</td>
-      <td>${inSel?'<span style="color:#00d4b8;font-weight:700;">✅ IN SIM</span>':'<button onclick="openManualFromUniverse(\''+s.ticker+'\')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;">+ APRI</button>'}</td>
-    </tr>`;
-  });
-  h += "</table></div>";
-  wrap.innerHTML = h;
-}
+document.getElementById("wlExcelInput")?.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const wb = XLSX.read(ev.target.result, {type:"binary"});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, {header:1});
 
-function renderRotationActions(toAdd, toSell, toKeep, prof, perTicker) {
-  const panel = document.getElementById("rotationPanel");
-  const wrap = document.getElementById("rotationWrap");
-  if (!panel||!wrap) return;
-  panel.style.display = "block";
-  let h = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:12px;">`;
-  if (toAdd.length>0) h += `<div class="action-card buy"><div style="font-weight:700;color:#00d4b8;margin-bottom:8px;">🟢 APRI POSIZIONI (${toAdd.length})</div>${toAdd.map(s=>`<div style="padding:4px 0;font-size:12px;"><strong>${s.ticker}</strong> ${s.name||""}<div style="font-size:10px;color:var(--dim);">€${perTicker.toFixed(0)} | Score: ${s.finalScore.toFixed(1)} | Stop: €${s.price?(s.price*0.93).toFixed(2):"--"}</div></div>`).join("")}</div>`;
-  if (toSell.length>0) h += `<div class="action-card sell"><div style="font-weight:700;color:#ff6b6b;margin-bottom:8px;">🔴 CHIUDI POSIZIONI (${toSell.length})</div>${toSell.map(p=>`<div style="padding:4px 0;font-size:12px;display:flex;align-items:center;gap:8px;"><strong>${p.ticker}</strong><button onclick="openCloseSim('${p.id}')" style="background:#ff6b6b;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;">CHIUDI</button></div>`).join("")}</div>`;
-  if (toKeep.length>0) h += `<div class="action-card hold"><div style="font-weight:700;color:#ffd23f;margin-bottom:8px;">🟡 MANTIENI (${toKeep.length})</div>${toKeep.map(s=>`<div style="padding:4px 0;font-size:12px;"><strong>${s.ticker}</strong> — Score: ${s.finalScore.toFixed(1)}</div>`).join("")}</div>`;
-  h += `</div><div style="font-size:11px;color:#ff6b6b;background:#ff6b6b11;padding:10px;border-radius:8px;">🛑 <strong>STOP LOSS -7%</strong>: Chiudi ogni posizione che scende del 7% dal prezzo di acquisto. Alert Telegram automatico.</div>`;
-  wrap.innerHTML = h;
-}
+      // Find header row
+      let headerRowIdx=0, headerRow=[];
+      for (let i=0;i<Math.min(data.length,15);i++) {
+        const rowStr=(data[i]||[]).map(c=>String(c||"").toLowerCase()).join(",");
+        if (rowStr.includes("nome")||rowStr.includes("ticker")) { headerRowIdx=i; headerRow=data[i]; break; }
+      }
+      const headers = headerRow.map(h=>String(h||"").toLowerCase());
+      const iIdx = name => headers.findIndex(h=>h.includes(name));
 
-// ── TECH INDICATORS ───────────────────────────────────────────────────
+      const colNome = iIdx("nome")!==-1?iIdx("nome"):0;
+      const colTicker = iIdx("full ticker")!==-1?iIdx("full ticker"):(iIdx("ticker")!==-1?iIdx("ticker"):1);
+      const colFairLabel = iIdx("fair value")!==-1?iIdx("fair value"):7;
+      const colAnalyst = iIdx("rialzo")!==-1?iIdx("rialzo"):6;
+      const colCash = iIdx("flusso di cassa")!==-1?iIdx("flusso di cassa"):5;
+      const colPE = iIdx("prezzo/utile")!==-1?iIdx("prezzo/utile"):(iIdx("p/e")!==-1?iIdx("p/e"):17);
+      const colSector = iIdx("settore")!==-1?iIdx("settore"):-1;
+
+      let added=0, updated=0, skipped=0;
+      for (const row of data.slice(headerRowIdx+1)) {
+        if (!row||!row[colTicker]) continue;
+        const ticker = String(row[colTicker]).trim().toUpperCase();
+        if (!ticker||ticker.length<2) continue;
+
+        const existing = watchlist.find(w=>w.ticker===ticker);
+        const analystRaw = colAnalyst!==-1&&row[colAnalyst]!=null
+          ? parseFloat((parseFloat(row[colAnalyst])*(parseFloat(row[colAnalyst])<1?100:1)).toFixed(1)) : null;
+
+        if (existing) {
+          // Ask user once per batch or update silently
+          existing.fair_value_label = colFairLabel!==-1?row[colFairLabel]||existing.fair_value_label:existing.fair_value_label;
+          existing.analyst_upside = analystRaw||existing.analyst_upside;
+          existing.cash_flow_label = colCash!==-1?row[colCash]||existing.cash_flow_label:existing.cash_flow_label;
+          existing.pe = colPE!==-1&&row[colPE]!=null?parseFloat(parseFloat(row[colPE]).toFixed(1)):existing.pe;
+          try { await sbFetch("sim_universe?on_conflict=id","POST",[existing]); } catch(e) {}
+          updated++;
+        } else {
+          const newRow = {
+            id: `simuni_${ticker}_${currentUser}`,
+            user_id: currentUser, ticker,
+            name: row[colNome]||ticker,
+            sector: colSector!==-1&&row[colSector]?String(row[colSector]):"Altro",
+            pe: colPE!==-1&&row[colPE]!=null?parseFloat(parseFloat(row[colPE]).toFixed(1)):null,
+            fair_value_label: colFairLabel!==-1?row[colFairLabel]||null:null,
+            analyst_upside: analystRaw,
+            cash_flow_label: colCash!==-1?row[colCash]||null:null,
+            currency: "EUR"
+          };
+          try { await sbFetch("sim_universe?on_conflict=id","POST",[newRow]); watchlist.push(newRow); added++; } catch(e) { skipped++; }
+        }
+      }
+
+      e.target.value = "";
+      await loadAllData();
+      renderAll();
+      alert(`✅ Import completato:\n• Aggiunti: ${added}\n• Aggiornati: ${updated}\n• Saltati: ${skipped}\n\nPremi ANALIZZA per calcolare gli score.`);
+    } catch(err) { alert("Errore: "+err.message); }
+  };
+  reader.readAsBinaryString(file);
+});
+
+document.getElementById("btnClearWL")?.addEventListener("click", async () => {
+  if (!confirm("Svuotare tutta la watchlist?")) return;
+  try {
+    await sbFetch(`sim_universe?user_id=eq.${currentUser}`,"DELETE");
+    watchlist = [];
+    renderWatchlist();
+    renderHero();
+  } catch(e) { alert("Errore: "+e.message); }
+});
+
+// ── TECH SCORE ────────────────────────────────────────────────────────
 function calcSMA(c,p){if(c.length<p)return null;return c.slice(-p).reduce((a,b)=>a+b,0)/p;}
 function calcEMA(c,p){if(c.length<p)return null;const k=2/(p+1);let e=c.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=p;i<c.length;i++)e=c[i]*k+e*(1-k);return e;}
-function calcMACD(c){if(c.length<26)return{macd:null,signal:null};const e12=calcEMA(c,12),e26=calcEMA(c,26),macd=e12-e26;const mv=[];for(let i=26;i<=c.length;i++){const a=calcEMA(c.slice(0,i),12),b=calcEMA(c.slice(0,i),26);if(a&&b)mv.push(a-b);}return{macd,signal:mv.length>=9?calcEMA(mv,9):null};}
+function calcMACD(c){if(c.length<26)return{macd:null,signal:null};const e12=calcEMA(c,12),e26=calcEMA(c,26),m=e12-e26;const mv=[];for(let i=26;i<=c.length;i++){const a=calcEMA(c.slice(0,i),12),b=calcEMA(c.slice(0,i),26);if(a&&b)mv.push(a-b);}return{macd:m,signal:mv.length>=9?calcEMA(mv,9):null};}
 function calcRSI(c,p=14){if(c.length<p+1)return null;const r=c.slice(-(p+1));let g=0,l=0;for(let i=1;i<r.length;i++){const d=r[i]-r[i-1];if(d>0)g+=d;else l-=d;}const ag=g/p,al=l/p;if(al===0)return 100;return 100-(100/(1+ag/al));}
 function calcIchimoku(c,h,l){if(!h||!l||c.length<52)return{aboveKumo:null,tenkanAboveKijun:null};const hi=(a,n)=>Math.max(...a.slice(-n)),lo=(a,n)=>Math.min(...a.slice(-n));const tk=(hi(h,9)+lo(l,9))/2,kj=(hi(h,26)+lo(l,26))/2,sA=(tk+kj)/2,sB=(hi(h,52)+lo(l,52))/2;const pr=c[c.length-1];return{aboveKumo:pr>Math.max(sA,sB),belowKumo:pr<Math.min(sA,sB),tenkanAboveKijun:tk>kj};}
-function calcCompositeScore(c,h,l,fd={}){
+function calcScore(c,h,l,fd={}){
   const pr=c[c.length-1],s50=calcSMA(c,50),s200=calcSMA(c,200),rsi=calcRSI(c,14);
   const{macd,signal}=calcMACD(c),ich=calcIchimoku(c,h,l);
   let ts=0;
@@ -1082,10 +1035,7 @@ function calcCompositeScore(c,h,l,fd={}){
   if(ich.tenkanAboveKijun!==null)ts+=ich.tenkanAboveKijun?1:-1;
   const tn=((ts+7)/14)*10;
   let fs=5;
-  const fv=fd.fair_value_label||fd.fairValueLabel;
-  const au=fd.analyst_upside||fd.analystUpside;
-  const pe=fd.pe;
-  const cf=fd.cash_flow_label||fd.cashFlowLabel;
+  const fv=fd.fair_value_label;const au=fd.analyst_upside;const pe=fd.pe;const cf=fd.cash_flow_label;
   if(fv==="Sottovalutato")fs+=2;else if(fv==="Moderatamente sottovalutato")fs+=1;else if(fv==="Sopravvalutato")fs-=2;else if(fv==="Moderatamente sopravvalutato")fs-=1;
   if(au>30)fs+=2;else if(au>15)fs+=1;else if(au<0)fs-=1;
   if(pe&&pe<15)fs+=1;else if(pe&&pe>30)fs-=1;
@@ -1094,11 +1044,25 @@ function calcCompositeScore(c,h,l,fd={}){
   const comp=parseFloat((tn*0.6+fs*0.4).toFixed(1));
   const tr=ts>=5?"Strong Buy":ts>=2?"Buy":ts>=-1?"Neutral":ts>=-4?"Sell":"Strong Sell";
   const tc=ts>=5?"#00d4b8":ts>=2?"#80ed99":ts>=-1?"#ffd23f":ts>=-4?"#ff9f1c":"#ff6b6b";
-  return{composite:comp,techScore:ts,techRating:tr,techColor:tc,rsi,sma50:s50,sma200:s200};
+  return{composite:comp,techScore:ts,techRating:tr,techColor:tc,rsi};
+}
+
+function selectByProfile(scored, prof) {
+  const sel=[],sc={},total=Object.values(prof.weights).reduce((s,v)=>s+v,0);
+  const slots={};
+  Object.entries(prof.weights).forEach(([sec,pct])=>{slots[sec]=Math.max(1,Math.round((pct/total)*prof.n));});
+  for(const s of scored){
+    const sec=s.sector||"Altro";
+    const match=Object.keys(slots).find(k=>sec.toLowerCase().includes(k.toLowerCase())||k.toLowerCase().includes(sec.toLowerCase()));
+    if(match&&(sc[match]||0)<slots[match]){sel.push(s);sc[match]=(sc[match]||0)+1;}
+    if(sel.length>=prof.n)break;
+  }
+  for(const s of scored){if(sel.length>=prof.n)break;if(!sel.find(x=>x.ticker===s.ticker))sel.push(s);}
+  return sel.slice(0,prof.n);
 }
 
 // ── TELEGRAM ──────────────────────────────────────────────────────────
-async function sendTelegramBoth(message) {
+async function sendTG(message) {
   try {
     await Promise.all([
       fetch("/.netlify/functions/telegram",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:"fabrizio",message})}),
@@ -1106,11 +1070,6 @@ async function sendTelegramBoth(message) {
     ]);
   } catch(e) {}
 }
-
-window.loadRanking = function() {
-  if (lastRanking.length === 0) { document.getElementById("rankingWrap").innerHTML = `<div class="empty-state"><p>Esegui una simulazione per vedere la classifica</p></div>`; return; }
-  renderRanking(lastRanking, simPositions.map(p=>({ticker:p.ticker})));
-};
 
 </script>
 </body>
