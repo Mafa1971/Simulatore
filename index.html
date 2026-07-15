@@ -372,7 +372,13 @@ async function init() {
   setStatus("⏳ Caricamento...");
   await loadAllData();
   if (watchlist.length === 0) await loadDefaultTickers();
+  // Restore last ranking from localStorage
+  try {
+    const saved = localStorage.getItem("sim_ranking_"+currentUser);
+    if (saved) lastRanking = JSON.parse(saved);
+  } catch(e) {}
   renderAll();
+  if (lastRanking.length > 0) renderRanking(lastRanking, simPositions);
   setStatus("");
 }
 
@@ -470,7 +476,8 @@ function el(id) { return document.getElementById(id)||{}; }
 // ── POSITIONS TABLE ───────────────────────────────────────────────────
 function renderPositionsTable() {
   const wrap = el("positionsWrap");
-  if (!wrap.innerHTML !== undefined && simPositions.length === 0) {
+  if (!wrap) return;
+  if (simPositions.length === 0) {
     wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione — premi AVVIA SIMULAZIONE</p></div>`;
     return;
   }
@@ -541,7 +548,7 @@ function renderPositionsTable() {
 // ── ROTATION PANEL ────────────────────────────────────────────────────
 function renderRotationPanel() {
   const wrap = el("rotationWrap");
-  if (!wrap.innerHTML !== undefined) return;
+  if (!wrap) return;
   if (lastRanking.length === 0) { wrap.innerHTML = `<div style="color:var(--dim);font-size:11px;">Esegui l'analisi per vedere i suggerimenti di rotazione</div>`; return; }
 
   const profile = document.getElementById("simProfile")?.value || "bilanciato";
@@ -596,7 +603,7 @@ function renderRotationPanel() {
 // ── WATCHLIST ─────────────────────────────────────────────────────────
 function renderWatchlist() {
   const wrap = el("watchlistWrap");
-  if (!wrap || !wrap.innerHTML !== undefined && wrap.innerHTML === undefined) return;
+  if (!wrap) return;
   if (!watchlist || watchlist.length === 0) {
     if (wrap) wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Importa il file Excel o carica i titoli default</p></div>`;
     return;
@@ -654,7 +661,7 @@ function renderWatchlist() {
 // ── CLASSIFICA ────────────────────────────────────────────────────────
 function renderRanking(ranked, positions) {
   const wrap = el("rankingWrap");
-  if (!wrap.innerHTML !== undefined) return;
+  if (!wrap) return;
   if (ranked.length === 0) { wrap.innerHTML = `<div class="empty-state"><p>Esegui l'analisi per vedere la classifica</p></div>`; return; }
 
   let h = `<div style="overflow-x:auto;"><table>
@@ -692,7 +699,7 @@ function renderRanking(ranked, positions) {
 // ── STORICO ───────────────────────────────────────────────────────────
 function renderClosedTable() {
   const wrap = el("storWrap");
-  if (!wrap.innerHTML !== undefined) return;
+  if (!wrap) return;
   if (closedPositions.length === 0) { wrap.innerHTML = `<div class="empty-state"><p>Nessuna operazione chiusa</p></div>`; return; }
 
   let totPL = 0;
@@ -728,7 +735,7 @@ function renderClosedTable() {
 // ── STATISTICHE ───────────────────────────────────────────────────────
 function renderStats() {
   const wrap = el("statsWrap");
-  if (!wrap.innerHTML !== undefined) return;
+  if (!wrap) return;
   if (closedPositions.length === 0) { wrap.innerHTML = `<div class="empty-state"><p>Chiudi operazioni per vedere le statistiche</p></div>`; return; }
   const win = closedPositions.filter(p => p.sell_price > p.buy_price);
   const los = closedPositions.filter(p => p.sell_price <= p.buy_price);
@@ -874,7 +881,7 @@ window.runAnalysis = async function() {
       w.techRating = sd.techRating;
       w.techColor = sd.techColor;
       // Save updated watchlist item
-      try { await sbFetch("sim_universe?on_conflict=id", "POST", [{id:w.id, user_id:currentUser, ticker:w.ticker, rsi: sd.rsi, score: sd.composite, current_price_ref: price||w.current_price_ref}], true); } catch(e) {}
+      try { await sbFetch(`sim_universe?id=eq.${w.id}`, "PATCH", [{rsi: sd.rsi, score: sd.composite, current_price_ref: price||w.current_price_ref}], true); } catch(e) {}
       scored.push({...w, finalScore: sd.composite, techRating: sd.techRating, techColor: sd.techColor, rsi: sd.rsi});
       setStatus(`⏳ ${w.ticker}: Score ${sd.composite} (${scored.length}/${watchlist.length})`);
       await new Promise(r=>setTimeout(r,300));
@@ -918,7 +925,7 @@ window.refreshPrices = async function() {
     try {
       const data = await fetchYahoo(w.ticker,"1d","1d");
       const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (price) { w.current_price_ref = price; try { await sbFetch("sim_universe?on_conflict=id","POST",[{id:w.id,user_id:currentUser,ticker:w.ticker,current_price_ref:price}],true); } catch(e){} }
+      if (price) { w.current_price_ref = price; try { await sbFetch(`sim_universe?id=eq.${w.id}`,"PATCH",[{current_price_ref:price}],true); } catch(e){} }
       await new Promise(r=>setTimeout(r,300));
     } catch(e) {}
   }
