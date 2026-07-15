@@ -961,6 +961,10 @@ document.getElementById("wlExcelInput")?.addEventListener("change", async (e) =>
       }
       const headers = headerRow.map(h=>String(h||"").toLowerCase());
       const iIdx = name => headers.findIndex(h=>h.includes(name));
+      console.log("Headers:", headers);
+      console.log("ColTicker:", iIdx("full ticker"), iIdx("ticker"));
+      const firstRow = data[headerRowIdx+1];
+      if (firstRow) console.log("Prima riga:", firstRow.slice(0,5));
 
       const colNome = iIdx("nome")!==-1?iIdx("nome"):0;
       const colTicker = iIdx("full ticker")!==-1?iIdx("full ticker"):(iIdx("ticker")!==-1?iIdx("ticker"):1);
@@ -1007,7 +1011,9 @@ document.getElementById("wlExcelInput")?.addEventListener("change", async (e) =>
       e.target.value = "";
       await loadAllData();
       renderAll();
-      alert(`✅ Import completato:\n• Aggiunti: ${added}\n• Aggiornati: ${updated}\n• Saltati: ${skipped}\n\nPremi ANALIZZA per calcolare gli score.`);
+      renderWatchlist();
+      switchTab("Watchlist");
+      alert(`✅ Import completato:\n• Aggiunti: ${added}\n• Aggiornati: ${updated}\n• Saltati: ${skipped}\n\nPremi 🔍 ANALIZZA per calcolare gli score.`);
     } catch(err) { alert("Errore: "+err.message); }
   };
   reader.readAsBinaryString(file);
