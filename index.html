@@ -60,12 +60,11 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
 .action-card.buy{background:#00d4b811;border:1px solid #00d4b844;}
 .action-card.sell{background:#ff6b6b11;border:1px solid #ff6b6b44;}
 .action-card.hold{background:#ffd23f11;border:1px solid #ffd23f44;}
-a{color:var(--blue);text-decoration:none;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="loginScreen">
   <div style="text-align:center;"><div class="logo">FMP TRADING</div><div style="font-size:10px;color:var(--dim);letter-spacing:3px;margin-top:4px;">SIMULATORE ROTAZIONALE</div></div>
   <div class="lcard">
@@ -78,11 +77,10 @@ a{color:var(--blue);text-decoration:none;}
   </div>
 </div>
 
-<!-- APP -->
 <div id="appContent">
   <header class="hdr">
     <div>
-      <div class="logo" style="font-size:17px;">🔄 SIMULATORE ROTAZIONALE</div>
+      <div class="logo" style="font-size:17px;">🔄 SIMULATORE</div>
       <div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-top:2px;" id="userBadge"></div>
     </div>
     <div class="hdr-right">
@@ -94,20 +92,20 @@ a{color:var(--blue);text-decoration:none;}
   </header>
 
   <main>
-    <!-- HERO KPI -->
+    <!-- HERO -->
     <div class="cards">
       <div class="card"><div class="v" id="hRet">--</div><div class="l">Rendimento</div></div>
       <div class="card"><div class="v" id="hVal" style="color:var(--gold)">--</div><div class="l">Valore Att.</div></div>
       <div class="card"><div class="v" id="hPL">--</div><div class="l">P&L Virtuale</div></div>
       <div class="card"><div class="v" id="hInv" style="color:var(--dim)">--</div><div class="l">Investito</div></div>
-      <div class="card"><div class="v" id="hLiq" style="color:var(--blue)">--</div><div class="l">Liquidità</div></div>
+      <div class="card"><div class="v" id="hLiq">--</div><div class="l">Liquidità</div></div>
       <div class="card"><div class="v" id="hPos">0</div><div class="l">Posizioni</div></div>
       <div class="card"><div class="v" id="hWR" style="color:var(--green)">--</div><div class="l">Win Rate</div></div>
     </div>
+    <div id="liquidityWarn" style="display:none;background:#ff6b6b11;border:1px solid #ff6b6b44;border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;color:#ff6b6b;font-weight:700;"></div>
 
     <!-- TAB DASHBOARD -->
     <div id="tabDashboard" class="tab-content active">
-      <!-- CONTROLLI -->
       <div class="panel">
         <div class="panel-title">⚙️ CONTROLLI
           <select id="simProfile" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:8px;font-size:11px;">
@@ -121,30 +119,32 @@ a{color:var(--blue);text-decoration:none;}
           <input type="number" id="simCapital" value="20000" step="1000"
             style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;width:120px;" placeholder="Capitale €">
           <button class="btn success" onclick="runAnalysis()">🔍 ANALIZZA</button>
-          <button class="btn primary" onclick="openBuy('')">+ APRI POSIZIONE</button>
+          <button class="btn primary" onclick="openManualPosition()">+ APRI POSIZIONE</button>
           <button class="btn ghost" onclick="refreshPrices()" style="font-size:10px;">↻ PREZZI</button>
         </div>
-        <div style="font-size:11px;color:var(--dim);">Simulazione dal <strong style="color:var(--gold);">1 Aprile 2025</strong> • Stop Loss: <strong style="color:var(--red);">-7%</strong> • Revisione mensile</div>
-        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <button class="btn primary" id="btnImportPos">📥 IMPORTA POSIZIONI EXCEL</button>
           <input type="file" id="posExcelInput" accept=".xlsx,.xls" style="display:none;">
-          <button class="btn success" onclick="exportBackup()">💾 ESPORTA BACKUP</button>
-          <button class="btn ghost" id="btnImportBackup">📂 RIPRISTINA BACKUP</button>
+          <button class="btn success" onclick="exportBackup()">💾 BACKUP</button>
+          <button class="btn ghost" id="btnImportBackup">📂 RIPRISTINA</button>
           <input type="file" id="backupInput" accept=".json" style="display:none;">
         </div>
-        <div id="simStatus" style="margin-top:8px;font-size:11px;color:var(--gold);min-height:16px;"></div>
+        <div id="simStatus" style="margin-top:8px;font-size:11px;min-height:16px;"></div>
       </div>
 
-      <!-- POSIZIONI APERTE -->
       <div class="panel">
         <div class="panel-title">📂 POSIZIONI SIMULATE APERTE</div>
-        <div id="positionsWrap"><div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione aperta</p></div></div>
+        <div id="positionsWrap"><div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione — usa + APRI POSIZIONE o importa Excel</p></div></div>
       </div>
 
-      <!-- ROTAZIONE -->
+      <div class="panel">
+        <div class="panel-title">⚖️ RIBILANCIAMENTO PORTAFOGLIO</div>
+        <div id="rebalanceWrap"><div style="color:var(--dim);font-size:11px;">Seleziona un profilo e premi 🔍 ANALIZZA</div></div>
+      </div>
+
       <div class="panel">
         <div class="panel-title">🔄 SUGGERIMENTI DI ROTAZIONE</div>
-        <div id="rotationWrap"><div style="color:var(--dim);font-size:11px;">Premi ANALIZZA per vedere i suggerimenti</div></div>
+        <div id="rotationWrap"><div style="color:var(--dim);font-size:11px;">Premi 🔍 ANALIZZA per vedere i suggerimenti basati sullo score composito</div></div>
       </div>
     </div>
 
@@ -153,14 +153,14 @@ a{color:var(--blue);text-decoration:none;}
       <div class="panel">
         <div class="panel-title">👁 WATCHLIST
           <span id="wlCount" style="color:var(--blue);font-size:10px;"></span>
-          <button class="btn success" id="btnLoadDefault">🏛️ DEFAULT MIB</button>
+          <button class="btn success" id="btnLoadDefault">🏛️ PORTAFOGLIO OLD</button>
           <button class="btn primary" id="btnImportWL">📊 IMPORTA EXCEL</button>
           <input type="file" id="wlExcelInput" accept=".xlsx,.xls" style="display:none;">
           <button class="btn ghost" onclick="refreshPrices()" style="font-size:10px;">↻ PREZZI</button>
           <button class="btn danger" id="btnClearWL">🗑</button>
         </div>
-        <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">Titoli ordinati per Score composito • 🟢 BUY = Score ≥ 5 • ✅ = già in portafoglio</div>
-        <div id="watchlistWrap"><div class="empty-state"><div class="ic">📊</div><p>Carica DEFAULT MIB o importa Excel</p></div></div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:10px;">Ordinata per Score • 🟢 BUY ≥ 5 • ✅ già in portafoglio</div>
+        <div id="watchlistWrap"><div class="empty-state"><div class="ic">📊</div><p>Carica PORTAFOGLIO OLD o importa Excel</p></div></div>
       </div>
     </div>
 
@@ -170,7 +170,7 @@ a{color:var(--blue);text-decoration:none;}
         <div class="panel-title">🏆 CLASSIFICA SCORE COMPOSITO
           <button class="btn ghost" onclick="runAnalysis()" style="font-size:10px;">🔍 RICALCOLA</button>
         </div>
-        <div id="rankingWrap"><div class="empty-state"><p>Premi ANALIZZA per vedere la classifica</p></div></div>
+        <div id="rankingWrap"><div class="empty-state"><p>Premi 🔍 ANALIZZA per vedere la classifica</p></div></div>
       </div>
     </div>
 
@@ -211,10 +211,10 @@ a{color:var(--blue);text-decoration:none;}
     <div class="fg"><label>Ticker</label><select id="buyTicker"></select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="fg"><label>Prezzo Acquisto €</label><input type="number" id="buyPrice" step="any"></div>
-      <div class="fg"><label>Quantità</label><input type="number" id="buyQty" value="100" min="1"></div>
+      <div class="fg"><label>Quantità</label><input type="number" id="buyQty" value="1" min="1"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="fg"><label>Data (default 01/04/2025)</label><input type="date" id="buyDate" value="2025-04-01"></div>
+      <div class="fg"><label>Data Acquisto</label><input type="date" id="buyDate" value="2025-04-01"></div>
       <div class="fg"><label>Profilo</label>
         <select id="buyProfile">
           <option value="conservativo">🛡️ Conservativo</option>
@@ -226,7 +226,7 @@ a{color:var(--blue);text-decoration:none;}
         </select>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--red);background:#ff6b6b11;padding:8px;border-radius:6px;margin-bottom:14px;">🛑 Stop Loss automatico: -7% dal prezzo di acquisto</div>
+    <div style="font-size:11px;color:#ff6b6b;background:#ff6b6b11;padding:8px;border-radius:6px;margin-bottom:14px;" id="buyLiquidityInfo">🛑 Stop Loss: -7% automatico</div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn ghost" id="btnCancelBuy">Annulla</button>
       <button class="btn primary" id="btnConfirmBuy">Apri Posizione</button>
@@ -257,45 +257,49 @@ a{color:var(--blue);text-decoration:none;}
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────
-const SUPA_URL = "https://bvzgudqbirlqnotaqame.supabase.co";
-const SUPA_KEY = "sb_publishable_6JQK_8MZHBiEBVnq0ei3cQ_qbiuc5RO";
 const USERS = {
   fabrizio: { password: "Marinportfoglio2026.", name: "FABRIZIO" },
   jonathan:  { password: "Pessinaportfoglio2026.", name: "JONATHAN" }
 };
-const AUTH_KEY = "sim_auth_v2";
+const AUTH_KEY = "sim_auth_v3";
 
 const SIM_PROFILES = {
-  conservativo: { name:"Conservativo", n:8,  icon:"🛡️", weights:{"Finanziario":30,"Utilities":25,"Salute":20,"Energia":15,"Consumer":10} },
-  bilanciato:   { name:"Bilanciato",   n:10, icon:"⚖️", weights:{"Finanziario":25,"Utilities":15,"Salute":15,"Energia":15,"Tecnologia":15,"Consumer":15} },
-  aggressivo:   { name:"Aggressivo",   n:12, icon:"🚀", weights:{"Tecnologia":35,"Finanziario":25,"Consumer":20,"Salute":10,"Energia":10} },
-  allweather:   { name:"All Weather",  n:10, icon:"🌦️", weights:{"Finanziario":25,"Utilities":25,"Energia":20,"Salute":15,"Tecnologia":15} },
-  buffett:      { name:"Buffett",      n:10, icon:"🎩", weights:{"Finanziario":40,"Consumer":25,"Utilities":15,"Salute":10,"Energia":10} },
-  tech:         { name:"Tech Focus",   n:10, icon:"💻", weights:{"Tecnologia":50,"Finanziario":20,"Consumer":15,"Salute":15} }
+  conservativo: { name:"Conservativo", icon:"🛡️", n:8,
+    weights:{"Finanziario":30,"Utilities":25,"Salute":20,"Energia":15,"Consumer":10} },
+  bilanciato:   { name:"Bilanciato",   icon:"⚖️", n:10,
+    weights:{"Finanziario":25,"Utilities":15,"Salute":15,"Energia":15,"Tecnologia":15,"Consumer":15} },
+  aggressivo:   { name:"Aggressivo",   icon:"🚀", n:12,
+    weights:{"Tecnologia":35,"Finanziario":25,"Consumer":20,"Salute":10,"Energia":10} },
+  allweather:   { name:"All Weather",  icon:"🌦️", n:10,
+    weights:{"Finanziario":25,"Utilities":25,"Energia":20,"Salute":15,"Tecnologia":15} },
+  buffett:      { name:"Buffett",      icon:"🎩", n:10,
+    weights:{"Finanziario":40,"Consumer":25,"Utilities":15,"Salute":10,"Energia":10} },
+  tech:         { name:"Tech Focus",   icon:"💻", n:10,
+    weights:{"Tecnologia":50,"Finanziario":20,"Consumer":15,"Salute":15} }
 };
 
-const DEFAULT_TICKERS = [
-  {ticker:"AZM.MI",  name:"Azimut Holding",       sector:"Finanziario"},
-  {ticker:"BGN.MI",  name:"Banca Generali",        sector:"Finanziario"},
-  {ticker:"BMED.MI", name:"Banca Mediolanum",      sector:"Finanziario"},
-  {ticker:"CE.MI",   name:"Credito Emiliano",      sector:"Finanziario"},
-  {ticker:"ENEL.MI", name:"Enel SpA",              sector:"Utilities"},
-  {ticker:"ENI.MI",  name:"Eni S.p.A.",            sector:"Energia"},
-  {ticker:"G.MI",    name:"Assicurazioni Generali",sector:"Finanziario"},
-  {ticker:"STMMI.MI",name:"STMicroelectronics",    sector:"Tecnologia"},
-  {ticker:"CPR.MI",  name:"Campari",               sector:"Consumer"},
-  {ticker:"REC.MI",  name:"Recordati",             sector:"Salute"}
+const OLD_TICKERS = [
+  {ticker:"AZM.MI",  name:"Azimut Holding",        sector:"Finanziario"},
+  {ticker:"BGN.MI",  name:"Banca Generali",         sector:"Finanziario"},
+  {ticker:"BMED.MI", name:"Banca Mediolanum",       sector:"Finanziario"},
+  {ticker:"CE.MI",   name:"Credito Emiliano",       sector:"Finanziario"},
+  {ticker:"ENEL.MI", name:"Enel SpA",               sector:"Utilities"},
+  {ticker:"ENI.MI",  name:"Eni S.p.A.",             sector:"Energia"},
+  {ticker:"G.MI",    name:"Assicurazioni Generali", sector:"Finanziario"},
+  {ticker:"STMMI.MI",name:"STMicroelectronics",     sector:"Tecnologia"},
+  {ticker:"CPR.MI",  name:"Campari",                sector:"Consumer"},
+  {ticker:"REC.MI",  name:"Recordati",              sector:"Salute"}
 ];
 
 let currentUser = null;
-let simPositions = [];
-let closedPositions = [];
+let simPositions = [];   // open
+let closedPositions = []; // closed
 let watchlist = [];
 let lastRanking = [];
 let closingId = null;
 let chartEquity = null;
 
-// ── SUPABASE via Netlify proxy ───────────────────────────────────────
+// ── SUPABASE via Netlify proxy ────────────────────────────────────────
 async function sbFetch(path, method="GET", body=null, silent=false) {
   const opts = {
     method,
@@ -305,18 +309,19 @@ async function sbFetch(path, method="GET", body=null, silent=false) {
     }
   };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(`/.netlify/functions/supabase?path=${encodeURIComponent(path)}`, opts);
-  const text = await res.text();
-  if (!res.ok) {
+  try {
+    const res = await fetch(`/.netlify/functions/supabase?path=${encodeURIComponent(path)}`, opts);
+    const text = await res.text();
+    if (!res.ok) { if (silent) return null; throw new Error(text); }
+    return text ? JSON.parse(text) : [];
+  } catch(e) {
     if (silent) return null;
-    throw new Error(text);
+    throw e;
   }
-  return text ? JSON.parse(text) : [];
 }
 
 async function fetchYahoo(ticker, range="1d", interval="1d") {
-  const url = `/.netlify/functions/yahoo?ticker=${encodeURIComponent(ticker)}&range=${range}&interval=${interval}`;
-  const res = await fetch(url);
+  const res = await fetch(`/.netlify/functions/yahoo?ticker=${encodeURIComponent(ticker)}&range=${range}&interval=${interval}`);
   return await res.json();
 }
 
@@ -365,27 +370,37 @@ window.switchTab = function(name) {
   document.getElementById("tabBtn" + name).classList.add("active");
   if (name === "Statistiche") setTimeout(renderEquityChart, 100);
   if (name === "Watchlist") renderWatchlist();
-  if (name === "Classifica") renderRanking(lastRanking, simPositions);
+  if (name === "Classifica") renderRanking();
 };
+
+function el(id) { return document.getElementById(id); }
+function setStatus(msg, col) {
+  const e = el("simStatus");
+  if (e) { e.textContent = msg; e.style.color = col || "var(--gold)"; }
+}
+
+function getCapital() { return parseFloat(el("simCapital")?.value || "20000") || 20000; }
+function getProfile() { return el("simProfile")?.value || "bilanciato"; }
+function getProf() { return SIM_PROFILES[getProfile()]; }
+
+function getInvested() {
+  return simPositions.reduce((s,p) => s + (p.buy_price||0)*(p.qty||0), 0);
+}
+function getLiquidity() {
+  return Math.max(0, getCapital() - getInvested());
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────
 async function init() {
   setStatus("⏳ Caricamento...");
   await loadAllData();
-  if (watchlist.length === 0) await loadDefaultTickers();
-  // Restore last ranking from localStorage
+  if (watchlist.length === 0) await loadOldPortfolio();
   try {
-    const saved = localStorage.getItem("sim_ranking_"+currentUser);
+    const saved = localStorage.getItem("sim_ranking_" + currentUser);
     if (saved) lastRanking = JSON.parse(saved);
   } catch(e) {}
   renderAll();
-  if (lastRanking.length > 0) renderRanking(lastRanking, simPositions);
   setStatus("");
-}
-
-function setStatus(msg) {
-  const el = document.getElementById("simStatus");
-  if (el) el.textContent = msg;
 }
 
 async function loadAllData() {
@@ -398,100 +413,109 @@ async function loadAllData() {
     simPositions = open || [];
     closedPositions = closed || [];
     watchlist = wl || [];
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error("Load error:", e); }
 }
 
-// ── LOAD DEFAULT TICKERS ──────────────────────────────────────────────
-async function loadDefaultTickers() {
-  setStatus("⏳ Caricamento titoli default al 1 Aprile 2025...");
-  const rows = [];
-  for (const t of DEFAULT_TICKERS) {
-    let buyPrice = null, currentPrice = null;
+// ── PORTAFOGLIO OLD ───────────────────────────────────────────────────
+async function loadOldPortfolio() {
+  setStatus("⏳ Caricamento Portafoglio OLD con prezzi al 1 Aprile 2025...");
+  for (const t of OLD_TICKERS) {
+    let buyPrice = null, curPrice = null;
     try {
       const data = await fetchYahoo(t.ticker, "max", "1d");
       const result = data?.chart?.result?.[0];
-      const timestamps = result?.timestamp || [];
+      const ts = result?.timestamp || [];
       const closes = result?.indicators?.quote?.[0]?.close || [];
-      const targetTs = new Date("2025-04-01").getTime() / 1000;
+      const target = new Date("2025-04-01").getTime() / 1000;
       let minDiff = Infinity;
-      timestamps.forEach((ts, i) => {
-        const diff = Math.abs(ts - targetTs);
-        if (diff < minDiff && closes[i] != null) { minDiff = diff; buyPrice = closes[i]; }
+      ts.forEach((t2, i) => {
+        const d = Math.abs(t2 - target);
+        if (d < minDiff && closes[i] != null) { minDiff = d; buyPrice = closes[i]; }
       });
-      currentPrice = result?.meta?.regularMarketPrice;
-      setStatus(`⏳ ${t.ticker}: Rif €${buyPrice?.toFixed(2)||"--"} | Att €${currentPrice?.toFixed(2)||"--"}`);
-    } catch(e) { setStatus(`⚠ ${t.ticker}: errore`); }
+      curPrice = result?.meta?.regularMarketPrice;
+      setStatus(`⏳ ${t.ticker}: €${buyPrice?.toFixed(2)||"--"}`);
+    } catch(e) {}
     const row = {
       id: `simuni_${t.ticker}_${currentUser}`,
-      user_id: currentUser,
-      ticker: t.ticker, name: t.name, sector: t.sector,
+      user_id: currentUser, ticker: t.ticker, name: t.name, sector: t.sector,
       currency: "EUR",
       buy_price_ref: buyPrice ? parseFloat(buyPrice.toFixed(4)) : null,
-      current_price_ref: currentPrice ? parseFloat(currentPrice.toFixed(4)) : null
+      current_price_ref: curPrice ? parseFloat(curPrice.toFixed(4)) : null
     };
-    rows.push(row);
-    try { await sbFetch("sim_universe","POST",[row]); } catch(e) { try { await sbFetch(`sim_universe?id=eq.${row.id}`,"PATCH",[{buy_price_ref:row.buy_price_ref,current_price_ref:row.current_price_ref}],true); } catch(e2){} }
+    try { await sbFetch("sim_universe", "POST", [row]); } catch(e) {
+      try { await sbFetch(`sim_universe?id=eq.${row.id}`, "PATCH", [{buy_price_ref:row.buy_price_ref, current_price_ref:row.current_price_ref}], true); } catch(e2) {}
+    }
+    watchlist.push(row);
     await new Promise(r => setTimeout(r, 500));
   }
-  watchlist = rows;
-  setStatus(`✅ ${rows.filter(r=>r.buy_price_ref).length}/${rows.length} prezzi al 1/4 trovati`);
+  setStatus(`✅ Portafoglio OLD caricato`, "#00d4b8");
 }
 
 // ── RENDER ALL ────────────────────────────────────────────────────────
 function renderAll() {
   renderHero();
   renderPositionsTable();
+  renderRebalancePanel();
   renderRotationPanel();
   renderClosedTable();
   renderStats();
 }
 
-// ── HERO KPI ──────────────────────────────────────────────────────────
+// ── HERO ──────────────────────────────────────────────────────────────
 function renderHero() {
-  const capital = parseFloat(document.getElementById("simCapital")?.value||"20000");
-  let invested = 0, currentVal = 0;
+  const capital = getCapital();
+  let invested = 0, curVal = 0;
   simPositions.forEach(p => {
     invested += (p.buy_price||0) * (p.qty||0);
-    currentVal += (p.current_price||p.buy_price||0) * (p.qty||0);
+    curVal += (p.current_price||p.buy_price||0) * (p.qty||0);
   });
-  const pl = currentVal - invested;
+  const pl = curVal - invested;
   const ret = invested > 0 ? (pl/invested*100) : 0;
   const liq = Math.max(0, capital - invested);
-  const winners = closedPositions.filter(p => p.sell_price > p.buy_price).length;
-  const wr = closedPositions.length > 0 ? (winners/closedPositions.length*100).toFixed(0)+"%" : "--";
+  const win = closedPositions.filter(p => p.sell_price > p.buy_price).length;
+  const wr = closedPositions.length > 0 ? (win/closedPositions.length*100).toFixed(0)+"%" : "--";
 
-  el("hRet").textContent = (ret>=0?"+":"")+ret.toFixed(2)+"%";
-  el("hRet").style.color = ret>=0?"#00d4b8":"#ff6b6b";
-  el("hVal").textContent = "€"+currentVal.toFixed(0);
-  el("hPL").textContent = (pl>=0?"+":"")+"€"+pl.toFixed(0);
-  el("hPL").style.color = pl>=0?"#00d4b8":"#ff6b6b";
-  el("hInv").textContent = "€"+invested.toFixed(0);
-  el("hLiq").textContent = "€"+liq.toFixed(0);
-  el("hPos").textContent = simPositions.length;
-  el("hWR").textContent = wr;
-  el("hLastUpdate").textContent = new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+  const set = (id, val, col) => { const e = el(id); if (e) { e.textContent = val; if (col) e.style.color = col; } };
+  set("hRet", (ret>=0?"+":"")+ret.toFixed(2)+"%", ret>=0?"#00d4b8":"#ff6b6b");
+  set("hVal", "€"+curVal.toFixed(0));
+  set("hPL", (pl>=0?"+€":"−€")+Math.abs(pl).toFixed(0), pl>=0?"#00d4b8":"#ff6b6b");
+  set("hInv", "€"+invested.toFixed(0));
+  set("hLiq", "€"+liq.toFixed(0), liq < capital*0.05 ? "#ff6b6b" : "#4fa3ff");
+  set("hPos", simPositions.length);
+  set("hWR", wr);
+  set("hLastUpdate", new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));
+
+  // Liquidità warning
+  const warn = el("liquidityWarn");
+  if (warn) {
+    if (invested > capital) {
+      warn.textContent = `⚠ ATTENZIONE: Investito €${invested.toFixed(0)} supera il capitale €${capital.toFixed(0)} di €${(invested-capital).toFixed(0)}`;
+      warn.style.display = "block";
+    } else {
+      warn.style.display = "none";
+    }
+  }
 }
-
-function el(id) { return document.getElementById(id)||{}; }
 
 // ── POSITIONS TABLE ───────────────────────────────────────────────────
 function renderPositionsTable() {
   const wrap = el("positionsWrap");
   if (!wrap) return;
   if (simPositions.length === 0) {
-    wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione — premi AVVIA SIMULAZIONE</p></div>`;
+    wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione aperta — usa + APRI POSIZIONE</p></div>`;
     return;
   }
-  if (simPositions.length === 0) { wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione — premi AVVIA SIMULAZIONE</p></div>`; return; }
-
   let totalInv=0, totalNow=0;
-  simPositions.forEach(p => { totalInv+=(p.buy_price||0)*(p.qty||0); totalNow+=(p.current_price||p.buy_price||0)*(p.qty||0); });
+  simPositions.forEach(p => {
+    totalInv += (p.buy_price||0)*(p.qty||0);
+    totalNow += (p.current_price||p.buy_price||0)*(p.qty||0);
+  });
 
   let h = `<div style="overflow-x:auto;"><table>
     <tr>
-      <th>Ticker</th><th>Nome</th><th>Settore</th><th>Qty</th>
+      <th>Ticker</th><th>Nome / Profilo</th><th>Settore</th><th>Qty</th>
       <th>P.Acq 01/04</th><th>Prezzo Att.</th><th>Investito</th><th>Val. Att.</th>
-      <th>P&L %</th><th>P&L €</th><th>Stop -7%</th><th>Segnale</th><th>Data</th><th></th>
+      <th>P&L %</th><th>P&L €</th><th>Stop -7%</th><th>Score</th><th>Data</th><th></th>
     </tr>`;
 
   simPositions.forEach(p => {
@@ -502,18 +526,14 @@ function renderPositionsTable() {
     const now = price*p.qty;
     const stopHit = p.stop_loss && price <= p.stop_loss;
     const plCol = plAbs>=0?"#00d4b8":"#ff6b6b";
-    const stopCol = stopHit?"#ff6b6b":p.stop_loss&&((price-p.stop_loss)/p.buy_price*100)<4?"#ffd23f":"#7d8aa3";
-    // Signal based on score
-    const score = p.score || null;
-    const sigCol = score>=7?"#00d4b8":score>=5?"#80ed99":score>=3?"#ffd23f":"#ff6b6b";
-    const sigTxt = score>=7?"STRONG BUY":score>=5?"BUY":score>=3?"NEUTRO":score?"SELL":"--";
+    const stopDist = p.stop_loss ? ((price-p.stop_loss)/p.buy_price*100) : null;
+    const stopCol = stopHit?"#ff6b6b":stopDist&&stopDist<3?"#ffd23f":"#7d8aa3";
+    const sc = p.score;
+    const scCol = sc>=7?"#00d4b8":sc>=5?"#80ed99":sc>=3?"#ffd23f":"#ff6b6b";
 
-    h += `<tr style="${stopHit?'background:#ff6b6b08;':''}">
-      <td>
-        <a href="https://finance.yahoo.com/chart/${p.ticker}" target="_blank" style="color:#4fa3ff;font-weight:700;">${p.ticker}</a>
-        ${stopHit?'<div style="color:#ff6b6b;font-size:10px;font-weight:700;">🛑 STOP LOSS</div>':''}
-      </td>
-      <td style="font-size:11px;">${p.name||""}<div style="font-size:10px;color:var(--dim)">${p.profile||""}</div></td>
+    h += `<tr style="${stopHit?'background:#ff6b6b08;border-left:3px solid #ff6b6b;':''}">
+      <td><strong style="color:#4fa3ff;">${p.ticker}</strong>${stopHit?'<div style="color:#ff6b6b;font-size:9px;font-weight:700;animation:pulse 1s infinite;">🛑 STOP LOSS</div>':''}</td>
+      <td style="font-size:11px;">${p.name||""}<div style="font-size:9px;color:var(--dim);">${p.profile||""}</div></td>
       <td style="font-size:10px;color:var(--dim);">${p.sector||""}</td>
       <td style="font-family:'JetBrains Mono',monospace;">${p.qty}</td>
       <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">€${parseFloat(p.buy_price).toFixed(2)}</td>
@@ -523,15 +543,12 @@ function renderPositionsTable() {
       <td><span class="chip ${plAbs>=0?'up':'down'}">${pl>=0?'+':''}${pl.toFixed(2)}%</span></td>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${plCol};">${plAbs>=0?'+€':'−€'}${Math.abs(plAbs).toFixed(0)}</td>
       <td style="font-size:11px;color:${stopCol};">${p.stop_loss?"€"+parseFloat(p.stop_loss).toFixed(2):"--"}</td>
-      <td>${score?`<span style="font-size:10px;font-weight:700;color:${sigCol};background:${sigCol}22;padding:2px 8px;border-radius:5px;">${sigTxt}</span>`:'--'}</td>
+      <td>${sc?`<span style="font-size:11px;font-weight:700;color:${scCol};">${sc.toFixed(1)}</span>`:"--"}</td>
       <td style="font-size:10px;color:var(--dim);">${p.buy_date||""}</td>
-      <td>
-        <button onclick="openClose('${p.id}')" style="background:#ff6b6b22;color:#ff6b6b;border:1px solid #ff6b6b44;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:700;">CHIUDI</button>
-      </td>
+      <td><button onclick="openClose('${p.id}')" style="background:#ff6b6b22;color:#ff6b6b;border:1px solid #ff6b6b44;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:700;">CHIUDI</button></td>
     </tr>`;
   });
 
-  // Totale row
   const totPL = totalNow - totalInv;
   const totPct = totalInv>0?(totPL/totalInv*100):0;
   h += `<tr style="border-top:2px solid var(--line);background:var(--panel2);">
@@ -541,7 +558,66 @@ function renderPositionsTable() {
     <td><span class="chip ${totPL>=0?'up':'down'}">${totPct>=0?'+':''}${totPct.toFixed(2)}%</span></td>
     <td style="font-weight:700;color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+€':'−€'}${Math.abs(totPL).toFixed(0)}</td>
     <td colspan="4"></td>
-  </tr>`;
+  </tr></table></div>`;
+  wrap.innerHTML = h;
+}
+
+// ── RIBILANCIAMENTO PANEL ─────────────────────────────────────────────
+function renderRebalancePanel() {
+  const wrap = el("rebalanceWrap");
+  if (!wrap) return;
+  const prof = getProf();
+  const capital = getCapital();
+  const invested = getInvested();
+
+  // Current sector allocation
+  const currentAlloc = {};
+  simPositions.forEach(p => {
+    const sec = p.sector || "Altro";
+    const val = (p.current_price||p.buy_price||0) * (p.qty||0);
+    currentAlloc[sec] = (currentAlloc[sec]||0) + val;
+  });
+
+  // Target allocation
+  const targetAlloc = {};
+  Object.entries(prof.weights).forEach(([sec, pct]) => {
+    targetAlloc[sec] = capital * pct / 100;
+  });
+
+  // Build rebalance table
+  const allSectors = new Set([...Object.keys(currentAlloc), ...Object.keys(targetAlloc)]);
+  let h = `<div style="font-size:11px;color:var(--dim);margin-bottom:12px;">
+    Profilo: <strong style="color:var(--txt);">${prof.icon} ${prof.name}</strong> |
+    Capitale: <strong style="color:var(--gold);">€${capital.toLocaleString("it-IT")}</strong> |
+    Investito: <strong style="color:var(--txt);">€${invested.toFixed(0)}</strong> |
+    Liquidità: <strong style="color:${getLiquidity()<1000?"#ff6b6b":"#4fa3ff"};">€${getLiquidity().toFixed(0)}</strong>
+  </div>
+  <div style="overflow-x:auto;"><table>
+    <tr>
+      <th>Settore</th><th>Target %</th><th>Target €</th><th>Attuale €</th><th>Attuale %</th><th>Scostamento</th><th>Azione</th>
+    </tr>`;
+
+  allSectors.forEach(sec => {
+    const target = targetAlloc[sec] || 0;
+    const actual = currentAlloc[sec] || 0;
+    const targetPct = prof.weights[sec] || 0;
+    const actualPct = invested > 0 ? (actual/capital*100) : 0;
+    const diff = actual - target;
+    const diffPct = targetPct - actualPct;
+    const col = Math.abs(diffPct) < 2 ? "#00d4b8" : Math.abs(diffPct) < 5 ? "#ffd23f" : "#ff6b6b";
+    const action = diffPct > 3 ? `🟢 Aumenta +€${Math.abs(diff).toFixed(0)}` :
+                   diffPct < -3 ? `🔴 Riduci −€${Math.abs(diff).toFixed(0)}` : "✅ OK";
+
+    h += `<tr>
+      <td style="font-weight:700;">${sec}</td>
+      <td style="color:var(--dim);">${targetPct}%</td>
+      <td style="color:var(--dim);">€${target.toFixed(0)}</td>
+      <td style="font-weight:700;">€${actual.toFixed(0)}</td>
+      <td style="font-weight:700;color:${col};">${actualPct.toFixed(1)}%</td>
+      <td style="color:${col};font-weight:700;">${diffPct>0?"+":""}${diffPct.toFixed(1)}%</td>
+      <td style="font-size:11px;">${action}</td>
+    </tr>`;
+  });
   h += "</table></div>";
   wrap.innerHTML = h;
 }
@@ -550,34 +626,61 @@ function renderPositionsTable() {
 function renderRotationPanel() {
   const wrap = el("rotationWrap");
   if (!wrap) return;
-  if (lastRanking.length === 0) { wrap.innerHTML = `<div style="color:var(--dim);font-size:11px;">Esegui l'analisi per vedere i suggerimenti di rotazione</div>`; return; }
 
-  const profile = document.getElementById("simProfile")?.value || "bilanciato";
-  const prof = SIM_PROFILES[profile];
-  const selected = selectByProfile(lastRanking, prof);
+  if (lastRanking.length === 0) {
+    wrap.innerHTML = `<div style="color:var(--dim);font-size:11px;padding:10px;">Premi 🔍 ANALIZZA per vedere i suggerimenti di rotazione basati sullo score composito.</div>`;
+    return;
+  }
+
+  const prof = getProf();
+  const capital = getCapital();
+  const liq = getLiquidity();
   const currentTickers = simPositions.map(p => p.ticker);
+
+  // Select best by profile
+  const selected = selectByProfile(lastRanking, prof);
   const toKeep = simPositions.filter(p => selected.find(s => s.ticker === p.ticker));
   const toSell = simPositions.filter(p => !selected.find(s => s.ticker === p.ticker));
   const toBuy = selected.filter(s => !currentTickers.includes(s.ticker));
 
-  let h = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">`;
+  // Calculate per-position budget based on available liquidity
+  const perPos = selected.length > 0 ? capital / selected.length : 0;
+
+  let h = `<div style="font-size:11px;color:var(--dim);margin-bottom:12px;">
+    Liquidità disponibile: <strong style="color:${liq<1000?'#ff6b6b':'#4fa3ff'};">€${liq.toFixed(0)}</strong> |
+    Budget per posizione: <strong style="color:var(--gold);">€${perPos.toFixed(0)}</strong>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">`;
 
   if (toBuy.length > 0) {
     h += `<div class="action-card buy">
-      <div style="font-weight:700;color:#00d4b8;margin-bottom:8px;font-size:11px;letter-spacing:1px;">🟢 ACQUISTA (${toBuy.length})</div>
-      ${toBuy.map(s => `<div style="padding:5px 0;font-size:12px;border-top:1px solid #00d4b822;">
-        <strong>${s.ticker}</strong> <span style="color:var(--dim);font-size:10px;">${s.name}</span>
-        <div style="font-size:10px;color:#ffd23f;">Score: ${s.finalScore?.toFixed(1)} | ${s.sector}</div>
-      </div>`).join("")}
+      <div style="font-weight:700;color:#00d4b8;margin-bottom:8px;font-size:11px;letter-spacing:1px;">🟢 SUGGERITI DA ACQUISTARE (${toBuy.length})</div>
+      ${toBuy.map(s => {
+        const cost = s.current_price_ref ? Math.floor(perPos / s.current_price_ref) * s.current_price_ref : perPos;
+        const canBuy = cost <= liq;
+        const qty = s.current_price_ref ? Math.floor(Math.min(perPos, liq) / s.current_price_ref) : 0;
+        return `<div style="padding:6px 0;border-top:1px solid #00d4b822;">
+          <div style="font-size:12px;"><strong>${s.ticker}</strong> <span style="color:var(--dim);font-size:10px;">${s.name}</span></div>
+          <div style="font-size:10px;color:#ffd23f;">Score: ${s.finalScore?.toFixed(1)} | ${s.sector||"--"}</div>
+          <div style="font-size:10px;color:${canBuy?'#00d4b8':'#ff6b6b'};">
+            ${s.current_price_ref?"€"+s.current_price_ref.toFixed(2)+" × "+qty+" az. = €"+(qty*s.current_price_ref).toFixed(0):"Prezzo non disponibile"}
+            ${!canBuy?"⚠ Liquidità insufficiente":""}
+          </div>
+          ${canBuy?`<button onclick="openBuyFrom('${s.ticker}')" style="margin-top:4px;background:#00d4b8;color:#000;border:none;border-radius:5px;padding:3px 10px;font-size:10px;cursor:pointer;font-weight:700;">+ APRI</button>`:""}
+        </div>`;
+      }).join("")}
     </div>`;
   }
 
   if (toSell.length > 0) {
     h += `<div class="action-card sell">
-      <div style="font-weight:700;color:#ff6b6b;margin-bottom:8px;font-size:11px;letter-spacing:1px;">🔴 CHIUDI (${toSell.length})</div>
-      ${toSell.map(p => `<div style="padding:5px 0;font-size:12px;border-top:1px solid #ff6b6b22;display:flex;align-items:center;justify-content:space-between;">
-        <div><strong>${p.ticker}</strong> <span style="color:var(--dim);font-size:10px;">${p.name}</span></div>
-        <button onclick="openClose('${p.id}')" style="background:#ff6b6b;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer;">CHIUDI</button>
+      <div style="font-weight:700;color:#ff6b6b;margin-bottom:8px;font-size:11px;letter-spacing:1px;">🔴 SUGGERITI DA CHIUDERE (${toSell.length})</div>
+      ${toSell.map(p => `<div style="padding:6px 0;border-top:1px solid #ff6b6b22;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:12px;"><strong>${p.ticker}</strong></div>
+          <div style="font-size:10px;color:var(--dim);">Score basso o fuori dal profilo</div>
+        </div>
+        <button onclick="openClose('${p.id}')" style="background:#ff6b6b;color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:700;">CHIUDI</button>
       </div>`).join("")}
     </div>`;
   }
@@ -587,16 +690,18 @@ function renderRotationPanel() {
       <div style="font-weight:700;color:#ffd23f;margin-bottom:8px;font-size:11px;letter-spacing:1px;">🟡 MANTIENI (${toKeep.length})</div>
       ${toKeep.map(p => {
         const s = lastRanking.find(r => r.ticker === p.ticker);
-        return `<div style="padding:5px 0;font-size:12px;border-top:1px solid #ffd23f22;">
+        return `<div style="padding:4px 0;border-top:1px solid #ffd23f22;font-size:12px;">
           <strong>${p.ticker}</strong> <span style="color:var(--dim);font-size:10px;">${p.name}</span>
-          ${s ? `<div style="font-size:10px;color:#ffd23f;">Score: ${s.finalScore?.toFixed(1)}</div>` : ""}
+          ${s?`<span style="color:#ffd23f;font-size:10px;"> | Score: ${s.finalScore?.toFixed(1)}</span>`:""}
         </div>`;
       }).join("")}
     </div>`;
   }
 
-  h += `</div><div style="margin-top:10px;font-size:11px;color:#ff6b6b;background:#ff6b6b11;padding:10px;border-radius:8px;">
-    🛑 <strong>STOP LOSS -7%:</strong> Chiudi immediatamente ogni posizione che scende del 7% dal prezzo di acquisto.
+  h += `</div>
+  <div style="margin-top:10px;font-size:11px;color:#ff6b6b;background:#ff6b6b11;padding:10px;border-radius:8px;">
+    🛑 <strong>STOP LOSS -7%</strong>: Chiudi immediatamente ogni posizione che scende del 7% dal prezzo di acquisto.
+    I suggerimenti sono indicativi — sei tu a decidere.
   </div>`;
   wrap.innerHTML = h;
 }
@@ -605,52 +710,44 @@ function renderRotationPanel() {
 function renderWatchlist() {
   const wrap = el("watchlistWrap");
   if (!wrap) return;
-  if (!watchlist || watchlist.length === 0) {
-    if (wrap) wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Importa il file Excel o carica i titoli default</p></div>`;
+  const cnt = el("wlCount");
+  if (cnt) cnt.textContent = watchlist.length + " titoli";
+
+  if (watchlist.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Carica Portafoglio OLD o importa Excel</p></div>`;
     return;
   }
-  const wlCountEl = el("wlCount");
-  if (wlCountEl) wlCountEl.textContent = watchlist.length + " titoli";
 
-  let h = `<div style="overflow-x:auto;"><table>
-    <tr>
-      <th>Ticker</th><th>Nome</th><th>Settore</th><th>P.Rif 01/04</th><th>Attuale</th>
-      <th>Δ dal Rif.</th><th>Score</th><th>Segnale</th><th>Fair Value</th><th>Rialzo</th><th>RSI</th><th></th>
-    </tr>`;
-
-  // Sort by score desc
   const sorted = [...watchlist].sort((a,b) => (b.score||0)-(a.score||0));
+  let h = `<div style="overflow-x:auto;"><table>
+    <tr><th>Ticker</th><th>Nome</th><th>Settore</th><th>P.Rif 01/04</th><th>Attuale</th><th>Δ%</th><th>Score</th><th>Segnale</th><th>Fair Value</th><th>Rialzo</th><th>Cash Flow</th><th>RSI</th><th></th></tr>`;
 
   sorted.forEach(w => {
-    const ref = w.buy_price_ref;
-    const cur = w.current_price_ref;
+    const ref = w.buy_price_ref, cur = w.current_price_ref;
     const delta = ref&&cur ? ((cur-ref)/ref*100) : null;
-    const deltaCol = delta>=0?"#00d4b8":"#ff6b6b";
+    const dCol = delta==null?"var(--dim)":delta>=0?"#00d4b8":"#ff6b6b";
     const sc = w.score;
     const scCol = sc>=7?"#00d4b8":sc>=5?"#80ed99":sc>=3?"#ffd23f":"#ff6b6b";
     const sigTxt = sc>=7?"STRONG BUY":sc>=5?"BUY":sc>=3?"NEUTRO":sc?"SELL":"--";
-    const sigCol = scCol;
-    const fvC = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
+    const fvC = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Affare":"#00ff88","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
     const fvCol = fvC[w.fair_value_label]||"#7d8aa3";
     const inPos = simPositions.find(p => p.ticker === w.ticker);
 
     h += `<tr style="${inPos?'background:#00d4b808;':''}">
-      <td>
-        <a href="https://finance.yahoo.com/chart/${w.ticker}" target="_blank" style="color:#4fa3ff;font-weight:700;">${w.ticker}</a>
-        ${inPos?'<div style="font-size:9px;color:#00d4b8;">✅ IN PORTAFOGLIO</div>':''}
-      </td>
+      <td><strong style="color:#4fa3ff;">${w.ticker}</strong>${inPos?'<div style="font-size:9px;color:#00d4b8;">✅ IN PORT.</div>':''}</td>
       <td style="font-size:11px;">${w.name||""}</td>
       <td style="font-size:10px;color:var(--dim);">${w.sector||""}</td>
       <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">${ref?"€"+ref.toFixed(2):"--"}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">${cur?"€"+cur.toFixed(2):"--"}</td>
-      <td style="font-weight:700;color:${deltaCol};">${delta!=null?(delta>=0?"+":"")+delta.toFixed(1)+"%":"--"}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:15px;color:${scCol||'var(--dim)'};">${sc?sc.toFixed(1):"--"}</td>
-      <td>${sc?`<span style="font-size:10px;font-weight:700;color:${sigCol};background:${sigCol}22;padding:2px 8px;border-radius:5px;">${sigTxt}</span>`:"--"}</td>
+      <td style="font-weight:700;color:${dCol};">${delta!=null?(delta>=0?"+":"")+delta.toFixed(1)+"%":"--"}</td>
+      <td style="font-weight:800;font-size:15px;color:${scCol||'var(--dim)'};">${sc?sc.toFixed(1):"--"}</td>
+      <td>${sc?`<span style="font-size:10px;font-weight:700;color:${scCol};background:${scCol}22;padding:2px 8px;border-radius:5px;">${sigTxt}</span>`:"--"}</td>
       <td style="font-size:10px;font-weight:700;color:${fvCol};">${w.fair_value_label||"--"}</td>
       <td style="color:${w.analyst_upside>0?"#00d4b8":"#ff6b6b"};font-size:11px;">${w.analyst_upside!=null?(w.analyst_upside>0?"+":"")+w.analyst_upside+"%":"--"}</td>
+      <td style="font-size:10px;color:var(--dim);">${w.cash_flow_label||"--"}</td>
       <td style="font-size:11px;color:${w.rsi>70?"#ff7700":w.rsi<30?"#00d4b8":"var(--dim)"};">${w.rsi?w.rsi.toFixed(0):"--"}</td>
       <td>
-        ${!inPos?`<button onclick="openBuy('${w.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:700;">+ APRI</button>`:""}
+        ${!inPos?`<button onclick="openBuyFrom('${w.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:700;">+ APRI</button>`:""}
         <button onclick="removeFromWL('${w.id}')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:13px;margin-left:4px;">✕</button>
       </td>
     </tr>`;
@@ -660,37 +757,40 @@ function renderWatchlist() {
 }
 
 // ── CLASSIFICA ────────────────────────────────────────────────────────
-function renderRanking(ranked, positions) {
+function renderRanking() {
   const wrap = el("rankingWrap");
   if (!wrap) return;
-  if (ranked.length === 0) { wrap.innerHTML = `<div class="empty-state"><p>Esegui l'analisi per vedere la classifica</p></div>`; return; }
+  if (lastRanking.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><p>Premi 🔍 ANALIZZA per vedere la classifica</p></div>`;
+    return;
+  }
+  const prof = getProf();
+  const selected = selectByProfile(lastRanking, prof);
+  let h = `<div style="font-size:11px;color:var(--dim);margin-bottom:10px;">Profilo: ${prof.icon} ${prof.name} — Top ${prof.n} titoli selezionati evidenziati</div>
+  <div style="overflow-x:auto;"><table>
+    <tr><th>#</th><th>Ticker</th><th>Score</th><th>Tecnico</th><th>RSI</th><th>Fair Value</th><th>Rialzo</th><th>Cash Flow</th><th>Δ dal 01/04</th><th>In Port.</th><th></th></tr>`;
 
-  let h = `<div style="overflow-x:auto;"><table>
-    <tr><th>#</th><th>Ticker</th><th>Score</th><th>Tecnico</th><th>RSI</th><th>Fair Value</th><th>Rialzo</th><th>Cash Flow</th><th>Δ dal 01/04</th><th></th></tr>`;
-
-  ranked.forEach((s, i) => {
-    const inPos = positions.find(p => p.ticker === s.ticker);
+  lastRanking.forEach((s, i) => {
+    const inSel = selected.find(x => x.ticker === s.ticker);
+    const inPos = simPositions.find(p => p.ticker === s.ticker);
     const sc = s.finalScore;
     const scCol = sc>=7?"#00d4b8":sc>=5?"#80ed99":sc>=3?"#ffd23f":"#ff6b6b";
     const tCol = s.techColor||"#7d8aa3";
-    const fvC = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
-    const fvCol = fvC[s.fair_value_label]||"#7d8aa3";
+    const fvC = {"Sottovalutato":"#00d4b8","Moderatamente sottovalutato":"#48cae4","Affare":"#00ff88","Fair":"#ffd23f","Sopravvalutato":"#ff6b6b"};
     const delta = s.buy_price_ref&&s.current_price_ref ? ((s.current_price_ref-s.buy_price_ref)/s.buy_price_ref*100) : null;
 
-    h += `<tr style="${inPos?'background:#00d4b808;':''}">
+    h += `<tr style="${inSel?'background:#d4a01710;':''}${inPos?'border-left:3px solid #00d4b8;':''}">
       <td style="color:var(--dim);font-weight:700;">${i+1}</td>
       <td><strong>${s.ticker}</strong><div style="font-size:10px;color:var(--dim)">${s.name||""}</div></td>
       <td><span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:16px;color:${scCol};">${sc?.toFixed(1)}</span></td>
       <td><span style="font-size:10px;font-weight:700;color:${tCol};background:${tCol}22;padding:2px 8px;border-radius:5px;">${s.techRating||"--"}</span></td>
       <td style="color:${s.rsi>70?"#ff7700":s.rsi<30?"#00d4b8":"var(--dim)"};">${s.rsi?.toFixed(0)||"--"}</td>
-      <td style="font-size:10px;font-weight:700;color:${fvCol};">${s.fair_value_label||"--"}</td>
+      <td style="font-size:10px;font-weight:700;color:${fvC[s.fair_value_label]||'#7d8aa3'};">${s.fair_value_label||"--"}</td>
       <td style="color:${s.analyst_upside>0?"#00d4b8":"#ff6b6b"};font-size:11px;">${s.analyst_upside!=null?(s.analyst_upside>0?"+":"")+s.analyst_upside+"%":"--"}</td>
       <td style="font-size:10px;color:var(--dim);">${s.cash_flow_label||"--"}</td>
       <td style="color:${delta>=0?"#00d4b8":"#ff6b6b"};font-size:11px;">${delta!=null?(delta>=0?"+":"")+delta.toFixed(1)+"%":"--"}</td>
-      <td>${inPos
-        ?'<span style="color:#00d4b8;font-size:10px;font-weight:700;">✅ IN PORT.</span>'
-        :`<button onclick="openBuy('${s.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;">+ APRI</button>`
-      }</td>
+      <td>${inPos?'<span style="color:#00d4b8;font-size:10px;font-weight:700;">✅</span>':inSel?'<span style="color:#ffd23f;font-size:10px;">🎯 TOP</span>':'<span style="color:var(--dim);font-size:10px;">—</span>'}</td>
+      <td>${!inPos?`<button onclick="openBuyFrom('${s.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;">+ APRI</button>`:'<span style="color:#00d4b8;font-size:10px;">✅ APERTO</span>'}</td>
     </tr>`;
   });
   h += "</table></div>";
@@ -701,11 +801,23 @@ function renderRanking(ranked, positions) {
 function renderClosedTable() {
   const wrap = el("storWrap");
   if (!wrap) return;
-  if (closedPositions.length === 0) { wrap.innerHTML = `<div class="empty-state"><p>Nessuna operazione chiusa</p></div>`; return; }
+  if (closedPositions.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><p>Nessuna operazione chiusa</p></div>`;
+    return;
+  }
+
+  // Group by profile for stats
+  const byProfile = {};
+  closedPositions.forEach(p => {
+    const pr = p.profile || "Altro";
+    if (!byProfile[pr]) byProfile[pr] = [];
+    byProfile[pr].push(p);
+  });
 
   let totPL = 0;
   let h = `<div style="overflow-x:auto;"><table>
-    <tr><th>Ticker</th><th>Nome</th><th>Qty</th><th>Acquisto</th><th>Vendita</th><th>P&L %</th><th>P&L €</th><th>Motivo</th><th>Data Acq.</th><th>Data Vend.</th></tr>`;
+    <tr><th>Ticker</th><th>Nome</th><th>Profilo</th><th>Qty</th><th>Acquisto</th><th>Vendita</th><th>P&L %</th><th>P&L €</th><th>Motivo</th><th>Data Acq.</th><th>Data Vend.</th></tr>`;
+
   closedPositions.forEach(p => {
     const pl = ((p.sell_price-p.buy_price)/p.buy_price*100);
     const plAbs = (p.sell_price-p.buy_price)*p.qty;
@@ -714,6 +826,7 @@ function renderClosedTable() {
     h += `<tr>
       <td><strong>${p.ticker}</strong></td>
       <td style="font-size:11px;">${p.name||""}</td>
+      <td style="font-size:10px;color:var(--dim);">${p.profile||""}</td>
       <td>${p.qty}</td>
       <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.buy_price).toFixed(2)}</td>
       <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.sell_price).toFixed(2)}</td>
@@ -725,11 +838,26 @@ function renderClosedTable() {
     </tr>`;
   });
   h += `<tr style="border-top:2px solid var(--line);background:var(--panel2);">
-    <td colspan="6" style="padding:10px 8px;font-weight:700;">TOTALE REALIZZATO</td>
+    <td colspan="7" style="padding:10px 8px;font-weight:700;">TOTALE REALIZZATO</td>
     <td style="font-weight:700;color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+€':'−€'}${Math.abs(totPL).toFixed(0)}</td>
     <td colspan="3"></td>
-  </tr>`;
-  h += "</table></div>";
+  </tr></table></div>`;
+
+  // Per-profile stats
+  if (Object.keys(byProfile).length > 1) {
+    h += `<div style="margin-top:16px;"><div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">Performance per Profilo</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;">`;
+    Object.entries(byProfile).forEach(([pr, trades]) => {
+      const pPL = trades.reduce((s,p) => s+(p.sell_price-p.buy_price)*p.qty, 0);
+      const pWin = trades.filter(p => p.sell_price > p.buy_price).length;
+      h += `<div class="card">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">${pr}</div>
+        <div style="font-weight:700;color:${pPL>=0?'#00d4b8':'#ff6b6b'};">${pPL>=0?'+€':'−€'}${Math.abs(pPL).toFixed(0)}</div>
+        <div style="font-size:10px;color:var(--dim);">${trades.length} trade | Win: ${pWin}/${trades.length}</div>
+      </div>`;
+    });
+    h += "</div></div>";
+  }
   wrap.innerHTML = h;
 }
 
@@ -737,7 +865,10 @@ function renderClosedTable() {
 function renderStats() {
   const wrap = el("statsWrap");
   if (!wrap) return;
-  if (closedPositions.length === 0) { wrap.innerHTML = `<div class="empty-state"><p>Chiudi operazioni per vedere le statistiche</p></div>`; return; }
+  if (closedPositions.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><p>Chiudi operazioni per vedere le statistiche</p></div>`;
+    return;
+  }
   const win = closedPositions.filter(p => p.sell_price > p.buy_price);
   const los = closedPositions.filter(p => p.sell_price <= p.buy_price);
   const totPL = closedPositions.reduce((s,p) => s+(p.sell_price-p.buy_price)*p.qty, 0);
@@ -745,104 +876,161 @@ function renderStats() {
   const totL = Math.abs(los.reduce((s,p) => s+(p.sell_price-p.buy_price)*p.qty, 0));
   const pf = totL>0?(totG/totL).toFixed(2):"∞";
   const wr = (win.length/closedPositions.length*100).toFixed(1);
-  wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
-    <div class="card"><div class="v" style="color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+€':'−€'}${Math.abs(totPL).toFixed(0)}</div><div class="l">P&L Realizzato</div></div>
-    <div class="card"><div class="v">${closedPositions.length}</div><div class="l">Trade Totali</div></div>
-    <div class="card"><div class="v" style="color:#00d4b8;">${win.length}</div><div class="l">Vincenti</div></div>
-    <div class="card"><div class="v" style="color:#ff6b6b;">${los.length}</div><div class="l">Perdenti</div></div>
-    <div class="card"><div class="v" style="color:${parseFloat(wr)>=50?'#00d4b8':'#ff6b6b'};">${wr}%</div><div class="l">Win Rate</div></div>
-    <div class="card"><div class="v" style="color:${parseFloat(pf)>=1?'#00d4b8':'#ff6b6b'};">${pf}</div><div class="l">Profit Factor</div></div>
-    <div class="card"><div class="v" style="color:#00d4b8;">+€${win.length>0?(totG/win.length).toFixed(0):0}</div><div class="l">Media Vincente</div></div>
-    <div class="card"><div class="v" style="color:#ff6b6b;">-€${los.length>0?(totL/los.length).toFixed(0):0}</div><div class="l">Media Perdente</div></div>
-  </div>`;
+
+  // Best and worst
+  let best=null, worst=null;
+  closedPositions.forEach(p => {
+    const pct = (p.sell_price-p.buy_price)/p.buy_price*100;
+    if (!best || pct > (best.sell_price-best.buy_price)/best.buy_price*100) best=p;
+    if (!worst || pct < (worst.sell_price-worst.buy_price)/worst.buy_price*100) worst=p;
+  });
+
+  const byReason = {};
+  closedPositions.forEach(p => { byReason[p.sell_reason] = (byReason[p.sell_reason]||0)+1; });
+
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;">
+      <div class="card"><div class="v" style="color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+€':'−€'}${Math.abs(totPL).toFixed(0)}</div><div class="l">P&L Totale</div></div>
+      <div class="card"><div class="v">${closedPositions.length}</div><div class="l">Trade</div></div>
+      <div class="card"><div class="v" style="color:#00d4b8;">${win.length}</div><div class="l">Vincenti</div></div>
+      <div class="card"><div class="v" style="color:#ff6b6b;">${los.length}</div><div class="l">Perdenti</div></div>
+      <div class="card"><div class="v" style="color:${parseFloat(wr)>=50?'#00d4b8':'#ff6b6b'};">${wr}%</div><div class="l">Win Rate</div></div>
+      <div class="card"><div class="v" style="color:${parseFloat(pf)>=1?'#00d4b8':'#ff6b6b'};">${pf}</div><div class="l">Profit Factor</div></div>
+      <div class="card"><div class="v" style="color:#00d4b8;">+€${win.length>0?(totG/win.length).toFixed(0):0}</div><div class="l">Media Win</div></div>
+      <div class="card"><div class="v" style="color:#ff6b6b;">−€${los.length>0?(totL/los.length).toFixed(0):0}</div><div class="l">Media Loss</div></div>
+    </div>
+    ${best||worst?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      ${best?`<div class="card"><div style="font-size:10px;color:var(--dim);">🏆 MIGLIOR TRADE</div><div style="font-weight:700;color:#00d4b8;">${best.ticker} +${((best.sell_price-best.buy_price)/best.buy_price*100).toFixed(1)}%</div></div>`:''}
+      ${worst?`<div class="card"><div style="font-size:10px;color:var(--dim);">📉 PEGGIOR TRADE</div><div style="font-weight:700;color:#ff6b6b;">${worst.ticker} ${((worst.sell_price-worst.buy_price)/worst.buy_price*100).toFixed(1)}%</div></div>`:''}
+    </div>`:''}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+      ${Object.entries(byReason).map(([r,n])=>{
+        const icons={target:'🎯',stop:'🛑',rotazione:'🔄',manuale:'✋'};
+        return `<div class="card"><div class="v">${n}</div><div class="l">${icons[r]||''} ${r}</div></div>`;
+      }).join('')}
+    </div>`;
 }
 
 // ── EQUITY CHART ──────────────────────────────────────────────────────
 function renderEquityChart() {
-  const ctx = document.getElementById("chartEquity");
+  const ctx = el("chartEquity");
   if (!ctx) return;
-  const capital = parseFloat(document.getElementById("simCapital")?.value||"20000");
+  const capital = getCapital();
   const sorted = [...closedPositions].sort((a,b) => (a.sell_date||"").localeCompare(b.sell_date||""));
   let eq = capital;
   const labels = ["01/04/2025"], vals = [capital];
-  sorted.forEach(p => { eq += (p.sell_price-p.buy_price)*p.qty; labels.push(p.sell_date||""); vals.push(parseFloat(eq.toFixed(0))); });
+  sorted.forEach(p => {
+    eq += (p.sell_price-p.buy_price)*p.qty;
+    labels.push(p.sell_date||"");
+    vals.push(parseFloat(eq.toFixed(0)));
+  });
   let curEq = eq;
   simPositions.forEach(p => { curEq += ((p.current_price||p.buy_price)-p.buy_price)*p.qty; });
   labels.push("Oggi"); vals.push(parseFloat(curEq.toFixed(0)));
   if (chartEquity) chartEquity.destroy();
   chartEquity = new Chart(ctx.getContext("2d"), {
     type:"line",
-    data:{labels, datasets:[{label:"Equity Simulata",data:vals,borderColor:"#d4a017",backgroundColor:"#d4a01722",fill:true,tension:0.3,pointRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#eef1f7",font:{size:10}}}},scales:{x:{ticks:{color:"#7d8aa3",font:{size:10}},grid:{color:"#1e2d45"}},y:{ticks:{color:"#7d8aa3",font:{size:10},callback:v=>"€"+v.toLocaleString("it-IT")},grid:{color:"#1e2d45"}}}}
+    data:{labels,datasets:[{label:"Equity",data:vals,borderColor:"#d4a017",backgroundColor:"#d4a01722",fill:true,tension:0.3,pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:"#eef1f7",font:{size:10}}}},
+      scales:{x:{ticks:{color:"#7d8aa3",font:{size:10}},grid:{color:"#1e2d45"}},
+              y:{ticks:{color:"#7d8aa3",font:{size:10},callback:v=>"€"+v.toLocaleString("it-IT")},grid:{color:"#1e2d45"}}}}
   });
 }
 
-// ── OPEN/CLOSE POSITIONS ──────────────────────────────────────────────
-window.openBuy = function(ticker) {
+// ── OPEN POSITION ─────────────────────────────────────────────────────
+window.openBuyFrom = function(ticker) {
   const w = watchlist.find(x => x.ticker === ticker);
-  const sel = el("buyTicker");
-  if (sel.innerHTML !== undefined) {
-    sel.innerHTML = watchlist.map(t=>`<option value="${t.ticker}" ${t.ticker===ticker?'selected':''}>${t.ticker} — ${t.name}</option>`).join("");
+  const selEl = el("buyTicker");
+  if (selEl) {
+    selEl.innerHTML = watchlist.map(t=>`<option value="${t.ticker}" ${t.ticker===ticker?'selected':''}>${t.ticker} — ${t.name||t.ticker}</option>`).join("");
+    selEl.value = ticker;
   }
-  if (el("buyPrice").value !== undefined) el("buyPrice").value = w?.current_price_ref?.toFixed(2)||"";
+  if (w?.current_price_ref && el("buyPrice")) el("buyPrice").value = w.current_price_ref.toFixed(2);
+  // Suggerisci quantità in base alla liquidità
+  const liq = getLiquidity();
+  const price = w?.current_price_ref || 0;
+  const prof = getProf();
+  const sugQty = price > 0 ? Math.floor(Math.min(liq, getCapital()/prof.n) / price) : 0;
+  if (el("buyQty")) el("buyQty").value = sugQty > 0 ? sugQty : 1;
   document.getElementById("modalBuyOverlay").classList.add("show");
 };
-window.openManualPosition = window.openBuy.bind(null, "");
 
-document.getElementById("btnCancelBuy")?.addEventListener("click", () => { document.getElementById("modalBuyOverlay").classList.remove("show"); });
+window.openManualPosition = function() {
+  const selEl = el("buyTicker");
+  if (selEl) selEl.innerHTML = watchlist.map(t=>`<option value="${t.ticker}">${t.ticker} — ${t.name||t.ticker}</option>`).join("");
+  if (el("buyPrice")) el("buyPrice").value = "";
+  if (el("buyQty")) el("buyQty").value = "1";
+  document.getElementById("modalBuyOverlay").classList.add("show");
+};
 
-document.getElementById("btnConfirmBuy")?.addEventListener("click", async () => {
+el("btnCancelBuy")?.addEventListener("click", () => { el("modalBuyOverlay").classList.remove("show"); });
+
+el("btnConfirmBuy")?.addEventListener("click", async () => {
   const ticker = el("buyTicker").value;
-  const buyPrice = parseFloat(el("buyPrice").value);
+  const buyPrice = parseFloat(String(el("buyPrice").value).replace(",","."));
   const qty = parseInt(el("buyQty").value);
   const profile = el("buyProfile").value;
-  const buyDate = el("buyDate").value || "2025-04-01";
+  const buyDate = el("buyDate").value || new Date().toISOString().slice(0,10);
   if (!ticker || !buyPrice || !qty) { alert("Compila tutti i campi"); return; }
 
-  const capital = parseFloat(el("simCapital")?.value||"20000");
-  const invested = simPositions.reduce((s,p)=>s+(p.buy_price||0)*(p.qty||0),0);
-  const liq = capital - invested;
-  const newCost = buyPrice * qty;
-  if (newCost > liq + 1) {
-    if (!confirm(`⚠ Questa posizione costa €${newCost.toFixed(0)} ma hai solo €${liq.toFixed(0)} di liquidità. Vuoi procedere comunque?`)) return;
+  const capital = getCapital();
+  const liq = getLiquidity();
+  const cost = buyPrice * qty;
+
+  if (cost > liq + 0.01) {
+    const maxQty = Math.floor(liq / buyPrice);
+    if (maxQty <= 0) { alert(`⚠ Liquidità insufficiente!\nLiquidità: €${liq.toFixed(0)}\nCosto: €${cost.toFixed(0)}\n\nChiudi posizioni per liberare liquidità.`); return; }
+    if (!confirm(`⚠ Con la liquidità disponibile (€${liq.toFixed(0)}) puoi comprare max ${maxQty} azioni a €${(maxQty*buyPrice).toFixed(0)}.\n\nVuoi procedere con ${maxQty} azioni?`)) return;
+    el("buyQty").value = maxQty;
+    const newCost = maxQty * buyPrice;
+    if (newCost > capital) { alert("⚠ Non puoi superare il capitale totale."); return; }
   }
 
+  const finalQty = parseInt(el("buyQty").value);
   const w = watchlist.find(x => x.ticker === ticker);
   const pos = {
     id: "simpos_"+Date.now()+"_"+ticker,
     user_id: currentUser, ticker,
-    name: w?.name||ticker, qty, buy_price: buyPrice, buy_date: buyDate,
-    currency: "EUR", sector: w?.sector||"Altro",
+    name: w?.name||ticker,
+    qty: finalQty,
+    buy_price: buyPrice,
+    buy_date: buyDate,
+    currency: "EUR",
+    sector: w?.sector||"Altro",
     stop_loss: parseFloat((buyPrice*0.93).toFixed(4)),
     profile: SIM_PROFILES[profile]?.name||profile,
-    status: "open", current_price: buyPrice
+    status: "open",
+    current_price: buyPrice
   };
-  if (w?.score) pos.score = w.score;
+
   try {
     await sbFetch("sim_positions", "POST", [pos]);
-    document.getElementById("modalBuyOverlay").classList.remove("show");
+    el("modalBuyOverlay").classList.remove("show");
     await loadAllData();
     renderAll();
-    await sendTG(`📥 <b>APERTURA SIMULATA — ${ticker}</b>\n\n📈 ${w?.name||ticker}\n💰 €${buyPrice.toFixed(2)} × ${qty} = €${(buyPrice*qty).toFixed(0)}\n🛑 Stop: €${(buyPrice*0.93).toFixed(2)}\n📅 ${buyDate}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+    await sendTG(`📥 <b>APERTURA SIMULATA — ${ticker}</b>\n\n📈 ${w?.name||ticker}\n💰 €${buyPrice.toFixed(2)} × ${finalQty} = €${(buyPrice*finalQty).toFixed(0)}\n🛑 Stop: €${(buyPrice*0.93).toFixed(2)}\n💧 Liquidità residua: €${(getLiquidity()).toFixed(0)}\n📅 ${buyDate}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
   } catch(e) { alert("Errore: "+e.message); }
 });
 
+// ── CLOSE POSITION ────────────────────────────────────────────────────
 window.openClose = function(id) {
   closingId = id;
   const p = simPositions.find(x=>x.id===id);
   if (p) {
-    el("closeInfo").textContent = `${p.ticker} | Acq: €${parseFloat(p.buy_price).toFixed(2)} | Stop: €${p.stop_loss?parseFloat(p.stop_loss).toFixed(2):"--"}`;
-    if (el("closePrice").value !== undefined) el("closePrice").value = p.current_price||p.buy_price;
+    const info = el("closeInfo");
+    if (info) info.textContent = `${p.ticker} | Acq: €${parseFloat(p.buy_price).toFixed(2)} | Stop -7%: €${p.stop_loss?parseFloat(p.stop_loss).toFixed(2):"--"}`;
+    if (el("closePrice")) el("closePrice").value = p.current_price||p.buy_price;
   }
-  document.getElementById("modalCloseOverlay").classList.add("show");
+  el("modalCloseOverlay").classList.add("show");
 };
 
-document.getElementById("btnCancelClose")?.addEventListener("click", () => { document.getElementById("modalCloseOverlay").classList.remove("show"); });
+el("btnCancelClose")?.addEventListener("click", () => { el("modalCloseOverlay").classList.remove("show"); });
 
-document.getElementById("btnConfirmClose")?.addEventListener("click", async () => {
+el("btnConfirmClose")?.addEventListener("click", async () => {
   const p = simPositions.find(x=>x.id===closingId);
   if (!p) return;
-  const sellPrice = parseFloat(el("closePrice").value);
+  const sellPrice = parseFloat(String(el("closePrice").value).replace(",","."));
   const reason = el("closeReason").value;
   if (!sellPrice) { alert("Inserisci il prezzo"); return; }
   const plPct = ((sellPrice-p.buy_price)/p.buy_price*100);
@@ -850,20 +1038,17 @@ document.getElementById("btnConfirmClose")?.addEventListener("click", async () =
   try {
     await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{status:"closed",sell_price:sellPrice,sell_date:new Date().toISOString().slice(0,10),sell_reason:reason}]);
     const icon = {target:"🎯",stop:"🛑",rotazione:"🔄",manuale:"✋"}[reason]||"📤";
-    await sendTG(`${icon} <b>CHIUSURA SIMULATA — ${p.ticker}</b>\n\n€${parseFloat(p.buy_price).toFixed(2)} → €${sellPrice.toFixed(2)}\nP&L: <b>${plPct>=0?'+':''}${plPct.toFixed(2)}% (${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)})</b>\n${reason}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
-    document.getElementById("modalCloseOverlay").classList.remove("show");
+    await sendTG(`${icon} <b>CHIUSURA SIMULATA — ${p.ticker}</b>\n\n€${parseFloat(p.buy_price).toFixed(2)} → €${sellPrice.toFixed(2)}\nP&L: <b>${plPct>=0?'+':''}${plPct.toFixed(2)}% (${plAbs>=0?'+€':'−€'}${Math.abs(plAbs).toFixed(0)})</b>\n${reason}\n💧 Liquidità liberata: €${(sellPrice*p.qty).toFixed(0)}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+    el("modalCloseOverlay").classList.remove("show");
     await loadAllData();
     renderAll();
   } catch(e) { alert("Errore: "+e.message); }
 });
 
-// ── ANALISI E SIMULAZIONE ─────────────────────────────────────────────
+// ── ANALISI ───────────────────────────────────────────────────────────
 window.runAnalysis = async function() {
   if (watchlist.length < 3) { alert("Aggiungi almeno 3 titoli nella watchlist."); return; }
-  const profile = el("simProfile").value;
-  const prof = SIM_PROFILES[profile];
   setStatus(`⏳ Analisi ${watchlist.length} titoli...`);
-
   const scored = [];
   for (const w of watchlist) {
     try {
@@ -871,37 +1056,29 @@ window.runAnalysis = async function() {
       const result = data?.chart?.result?.[0];
       const quote = result?.indicators?.quote?.[0]||{};
       const closes = (quote.close||[]).filter(v=>v!=null);
-      const highs = quote.high||[];
-      const lows = quote.low||[];
+      const highs = quote.high||[], lows = quote.low||[];
       if (closes.length < 20) continue;
       const sd = calcScore(closes, highs, lows, w);
       const price = result?.meta?.regularMarketPrice;
-      if (price) { w.current_price_ref = price; }
-      w.rsi = sd.rsi;
-      w.score = sd.composite;
-      w.techRating = sd.techRating;
-      w.techColor = sd.techColor;
-      // Save updated watchlist item
-      try { await sbFetch(`sim_universe?id=eq.${w.id}`, "PATCH", [{rsi: sd.rsi, score: sd.composite, current_price_ref: price||w.current_price_ref}], true); } catch(e) {}
-      scored.push({...w, finalScore: sd.composite, techRating: sd.techRating, techColor: sd.techColor, rsi: sd.rsi});
+      w.rsi = sd.rsi; w.score = sd.composite; w.techRating = sd.techRating; w.techColor = sd.techColor;
+      if (price) w.current_price_ref = price;
+      try { await sbFetch(`sim_universe?id=eq.${w.id}`, "PATCH", [{rsi:sd.rsi, score:sd.composite, current_price_ref:price||w.current_price_ref}], true); } catch(e) {}
+      scored.push({...w, finalScore:sd.composite, techRating:sd.techRating, techColor:sd.techColor, rsi:sd.rsi});
       setStatus(`⏳ ${w.ticker}: Score ${sd.composite} (${scored.length}/${watchlist.length})`);
       await new Promise(r=>setTimeout(r,300));
     } catch(e) { continue; }
   }
-
   scored.sort((a,b) => b.finalScore-a.finalScore);
   lastRanking = scored;
-
-  // Update scores in positions
+  try { localStorage.setItem("sim_ranking_"+currentUser, JSON.stringify(scored)); } catch(e) {}
+  // Update scores in open positions
   simPositions.forEach(p => {
     const s = scored.find(x=>x.ticker===p.ticker);
     if (s) p.score = s.finalScore;
   });
-
   renderAll();
-  renderRanking(scored, simPositions);
-  setStatus(`✅ Analisi completata — ${scored.length} titoli analizzati`);
-  await sendTG(`📊 <b>ANALISI COMPLETATA — ${prof.icon} ${prof.name}</b>\n\n🏆 Top 3: ${scored.slice(0,3).map(s=>s.ticker+"("+s.finalScore.toFixed(1)+")").join(", ")}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+  renderRanking();
+  setStatus(`✅ Analisi completata — ${scored.length} titoli`, "#00d4b8");
   switchTab("Classifica");
 };
 
@@ -914,9 +1091,9 @@ window.refreshPrices = async function() {
       const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
       if (price) {
         p.current_price = price;
-        try { await sbFetch(`sim_positions?id=eq.${p.id}`,"PATCH",[{current_price:price}],true); } catch(e) {}
+        try { await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{current_price:price}], true); } catch(e) {}
         if (p.stop_loss && price <= p.stop_loss) {
-          await sendTG(`🛑 <b>STOP LOSS SIMULATO — ${p.ticker}</b>\n\n€${price.toFixed(2)} ≤ Stop €${parseFloat(p.stop_loss).toFixed(2)}\n⚠️ Chiudi questa posizione!\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+          await sendTG(`🛑 <b>STOP LOSS SIMULATO — ${p.ticker}</b>\n\n💰 €${price.toFixed(2)} ≤ Stop €${parseFloat(p.stop_loss).toFixed(2)}\n⚠️ CHIUDI QUESTA POSIZIONE!\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
         }
       }
       await new Promise(r=>setTimeout(r,400));
@@ -926,36 +1103,37 @@ window.refreshPrices = async function() {
     try {
       const data = await fetchYahoo(w.ticker,"1d","1d");
       const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (price) { w.current_price_ref = price; try { await sbFetch(`sim_universe?id=eq.${w.id}`,"PATCH",[{current_price_ref:price}],true); } catch(e){} }
+      if (price) {
+        w.current_price_ref = price;
+        try { await sbFetch(`sim_universe?id=eq.${w.id}`,"PATCH",[{current_price_ref:price}],true); } catch(e) {}
+      }
       await new Promise(r=>setTimeout(r,300));
     } catch(e) {}
   }
   renderAll();
-  setStatus(`✅ Prezzi aggiornati`);
+  setStatus(`✅ Prezzi aggiornati`, "#00d4b8");
 };
 
 // ── WATCHLIST MANAGEMENT ──────────────────────────────────────────────
 window.removeFromWL = async function(id) {
-  if (!confirm("Rimuovere questo titolo?")) return;
+  if (!confirm("Rimuovere questo titolo dalla watchlist?")) return;
   try {
-    await sbFetch(`sim_universe?id=eq.${id}`,"DELETE");
+    await sbFetch(`sim_universe?id=eq.${id}`, "DELETE");
     watchlist = watchlist.filter(w=>w.id!==id);
-    renderWatchlist();
-    renderHero();
+    renderWatchlist(); renderHero();
   } catch(e) { alert("Errore: "+e.message); }
 };
 
-document.getElementById("btnLoadDefault")?.addEventListener("click", async () => {
-  if (!confirm("Caricare i 10 titoli MIB default con prezzi al 1 Aprile 2025?")) return;
-  watchlist = [];
-  await loadDefaultTickers();
+el("btnLoadDefault")?.addEventListener("click", async () => {
+  if (!confirm("Caricare il Portafoglio OLD (10 titoli MIB) con prezzi al 1 Aprile 2025?")) return;
+  await loadOldPortfolio();
   await loadAllData();
   renderAll();
 });
 
-document.getElementById("btnImportWL")?.addEventListener("click", () => { el("wlExcelInput").click(); });
+el("btnImportWL")?.addEventListener("click", () => { el("wlExcelInput")?.click(); });
 
-document.getElementById("wlExcelInput")?.addEventListener("change", async (e) => {
+el("wlExcelInput")?.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -964,8 +1142,6 @@ document.getElementById("wlExcelInput")?.addEventListener("change", async (e) =>
       const wb = XLSX.read(ev.target.result, {type:"binary"});
       const ws = wb.Sheets[wb.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(ws, {header:1});
-
-      // Find header row
       let headerRowIdx=0, headerRow=[];
       for (let i=0;i<Math.min(data.length,15);i++) {
         const rowStr=(data[i]||[]).map(c=>String(c||"").toLowerCase()).join(",");
@@ -973,11 +1149,6 @@ document.getElementById("wlExcelInput")?.addEventListener("change", async (e) =>
       }
       const headers = headerRow.map(h=>String(h||"").toLowerCase());
       const iIdx = name => headers.findIndex(h=>h.includes(name));
-      console.log("Headers:", headers);
-      console.log("ColTicker:", iIdx("full ticker"), iIdx("ticker"));
-      const firstRow = data[headerRowIdx+1];
-      if (firstRow) console.log("Prima riga:", firstRow.slice(0,5));
-
       const colNome = iIdx("nome")!==-1?iIdx("nome"):0;
       const colTicker = iIdx("full ticker")!==-1?iIdx("full ticker"):(iIdx("ticker")!==-1?iIdx("ticker"):1);
       const colFairLabel = iIdx("fair value")!==-1?iIdx("fair value"):7;
@@ -991,55 +1162,178 @@ document.getElementById("wlExcelInput")?.addEventListener("change", async (e) =>
         if (!row||!row[colTicker]) continue;
         const ticker = String(row[colTicker]).trim().toUpperCase();
         if (!ticker||ticker.length<2) continue;
-
+        const au = colAnalyst!==-1&&row[colAnalyst]!=null ? parseFloat((parseFloat(row[colAnalyst])*(parseFloat(row[colAnalyst])<1?100:1)).toFixed(1)) : null;
         const existing = watchlist.find(w=>w.ticker===ticker);
-        const analystRaw = colAnalyst!==-1&&row[colAnalyst]!=null
-          ? parseFloat((parseFloat(row[colAnalyst])*(parseFloat(row[colAnalyst])<1?100:1)).toFixed(1)) : null;
-
         if (existing) {
-          // Ask user once per batch or update silently
-          existing.fair_value_label = colFairLabel!==-1?row[colFairLabel]||existing.fair_value_label:existing.fair_value_label;
-          existing.analyst_upside = analystRaw||existing.analyst_upside;
-          existing.cash_flow_label = colCash!==-1?row[colCash]||existing.cash_flow_label:existing.cash_flow_label;
-          existing.pe = colPE!==-1&&row[colPE]!=null?parseFloat(parseFloat(row[colPE]).toFixed(1)):existing.pe;
-          try { await sbFetch(`sim_universe?id=eq.${existing.id}`,"PATCH",[{fair_value_label:existing.fair_value_label,analyst_upside:existing.analyst_upside,cash_flow_label:existing.cash_flow_label,pe:existing.pe}],true); } catch(e) {}
+          if (colFairLabel!==-1&&row[colFairLabel]) existing.fair_value_label=row[colFairLabel];
+          if (au!=null) existing.analyst_upside=au;
+          if (colCash!==-1&&row[colCash]) existing.cash_flow_label=row[colCash];
+          if (colPE!==-1&&row[colPE]!=null) existing.pe=parseFloat(parseFloat(row[colPE]).toFixed(1));
+          try { await sbFetch(`sim_universe?id=eq.${existing.id}`,"PATCH",[{fair_value_label:existing.fair_value_label,analyst_upside:existing.analyst_upside,cash_flow_label:existing.cash_flow_label,pe:existing.pe}],true); } catch(e){}
           updated++;
         } else {
-          const newRow = {
-            id: `simuni_${ticker}_${currentUser}`,
-            user_id: currentUser, ticker,
-            name: row[colNome]||ticker,
-            sector: colSector!==-1&&row[colSector]?String(row[colSector]):"Altro",
-            pe: colPE!==-1&&row[colPE]!=null?parseFloat(parseFloat(row[colPE]).toFixed(1)):null,
-            fair_value_label: colFairLabel!==-1?row[colFairLabel]||null:null,
-            analyst_upside: analystRaw,
-            cash_flow_label: colCash!==-1?row[colCash]||null:null,
-            currency: "EUR"
+          const nr = {
+            id:`simuni_${ticker}_${currentUser}`, user_id:currentUser, ticker,
+            name:row[colNome]||ticker,
+            sector:colSector!==-1&&row[colSector]?String(row[colSector]):"Altro",
+            pe:colPE!==-1&&row[colPE]!=null?parseFloat(parseFloat(row[colPE]).toFixed(1)):null,
+            fair_value_label:colFairLabel!==-1?row[colFairLabel]||null:null,
+            analyst_upside:au, cash_flow_label:colCash!==-1?row[colCash]||null:null, currency:"EUR"
           };
-          try { await sbFetch("sim_universe","POST",[newRow]); watchlist.push(newRow); added++; } catch(e) { console.error(e); skipped++; }
+          try { await sbFetch("sim_universe","POST",[nr]); watchlist.push(nr); added++; } catch(e) { skipped++; }
         }
       }
-
-      e.target.value = "";
+      e.target.value="";
       await loadAllData();
       switchTab("Watchlist");
       renderWatchlist();
-      renderHero();
-      alert(`✅ Import completato:\n• Aggiunti: ${added}\n• Aggiornati: ${updated}\n• Saltati: ${skipped}\n\nPremi 🔍 ANALIZZA per calcolare gli score.`);
+      alert(`✅ Import:\n• Aggiunti: ${added}\n• Aggiornati: ${updated}\n• Saltati: ${skipped}\n\nPremi 🔍 ANALIZZA per calcolare gli score.`);
     } catch(err) { alert("Errore: "+err.message); }
   };
   reader.readAsBinaryString(file);
 });
 
-document.getElementById("btnClearWL")?.addEventListener("click", async () => {
+el("btnClearWL")?.addEventListener("click", async () => {
   if (!confirm("Svuotare tutta la watchlist?")) return;
-  try {
-    await sbFetch(`sim_universe?user_id=eq.${currentUser}`,"DELETE");
-    watchlist = [];
-    renderWatchlist();
-    renderHero();
-  } catch(e) { alert("Errore: "+e.message); }
+  try { await sbFetch(`sim_universe?user_id=eq.${currentUser}`,"DELETE"); watchlist=[]; renderWatchlist(); renderHero(); } catch(e) { alert("Errore: "+e.message); }
 });
+
+// ── IMPORT POSIZIONI EXCEL ─────────────────────────────────────────────
+el("btnImportPos")?.addEventListener("click", () => { el("posExcelInput")?.click(); });
+
+el("posExcelInput")?.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const wb = XLSX.read(ev.target.result,{type:"binary"});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws,{header:1});
+      let headerRowIdx=0, headerRow=[];
+      for (let i=0;i<Math.min(data.length,10);i++) {
+        const rowStr=(data[i]||[]).map(c=>String(c||"").toLowerCase()).join(",");
+        if (rowStr.includes("ticker")||rowStr.includes("data")) { headerRowIdx=i; headerRow=data[i]; break; }
+      }
+      const headers = headerRow.map(h=>String(h||"").toLowerCase().trim());
+      const iIdx = name => headers.findIndex(h=>h.includes(name));
+      const colData=iIdx("data")!==-1?iIdx("data"):0;
+      const colTicker=iIdx("ticker")!==-1?iIdx("ticker"):1;
+      const colNome=iIdx("titolo")!==-1?iIdx("titolo"):(iIdx("nome")!==-1?iIdx("nome"):2);
+      const colSector=iIdx("settore")!==-1?iIdx("settore"):3;
+      const colQty=iIdx("az")!==-1?iIdx("az"):(iIdx("qt")!==-1?iIdx("qt"):4);
+      const colPrice=iIdx("prezzo")!==-1?iIdx("prezzo"):5;
+
+      const capital = getCapital();
+      let totalCost = getInvested();
+      const rows=[];
+
+      for (const row of data.slice(headerRowIdx+1)) {
+        if (!row||!row[colTicker]) continue;
+        const ticker=String(row[colTicker]).trim().toUpperCase();
+        if (!ticker||ticker.length<2) continue;
+        const existing=simPositions.find(p=>p.ticker===ticker&&p.status==="open");
+        if (existing&&!confirm(`${ticker} è già aperto. Sostituire?`)) continue;
+        if (existing) { try { await sbFetch(`sim_positions?id=eq.${existing.id}`,"DELETE"); } catch(e){} }
+
+        let buyDate="2025-04-01";
+        if (row[colData]) {
+          if (typeof row[colData]==="number") { const d=new Date((row[colData]-25569)*86400*1000); buyDate=d.toISOString().slice(0,10); }
+          else { const parts=String(row[colData]).split(/[\/\-]/); if(parts.length===3){const[d,m,y]=parts;buyDate=`${y.length===4?y:"20"+y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;} }
+        }
+        const qty=parseInt(row[colQty])||1;
+        const buyPrice=parseFloat(String(row[colPrice]||"0").replace(",","."))||0;
+        if (!buyPrice) continue;
+        const cost=buyPrice*qty;
+
+        if (totalCost+cost > capital*1.05) {
+          if (!confirm(`⚠ ${ticker}: aggiungere costerebbe €${cost.toFixed(0)} ma il capitale è al limite (€${totalCost.toFixed(0)}/${capital}). Aggiungere comunque?`)) continue;
+        }
+        totalCost += cost;
+
+        const w=watchlist.find(x=>x.ticker===ticker);
+        rows.push({
+          id:"simpos_"+Date.now()+"_"+ticker+"_"+Math.random().toString(36).slice(2,5),
+          user_id:currentUser, ticker, qty, buy_price:buyPrice, buy_date:buyDate,
+          name:row[colNome]||w?.name||ticker,
+          sector:row[colSector]||w?.sector||"Altro",
+          currency:"EUR", stop_loss:parseFloat((buyPrice*0.93).toFixed(4)),
+          profile:SIM_PROFILES[getProfile()]?.name||"Bilanciato",
+          status:"open", current_price:buyPrice
+        });
+        await new Promise(r=>setTimeout(r,50));
+      }
+
+      for (const pos of rows) { try { await sbFetch("sim_positions","POST",[pos]); } catch(er) { console.error(er); } }
+      e.target.value="";
+      await loadAllData();
+      renderAll();
+      alert(`✅ Importate ${rows.length} posizioni.`);
+    } catch(err) { alert("Errore: "+err.message); }
+  };
+  reader.readAsBinaryString(file);
+});
+
+// ── BACKUP / RESTORE ──────────────────────────────────────────────────
+window.exportBackup = function() {
+  const backup = {
+    version:3, date:new Date().toISOString(), user:currentUser,
+    capital:getCapital(), profile:getProfile(),
+    simPositions, closedPositions, watchlist, lastRanking
+  };
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=`sim_backup_${currentUser}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+};
+
+el("btnImportBackup")?.addEventListener("click", () => { el("backupInput")?.click(); });
+
+el("backupInput")?.addEventListener("change", async (e) => {
+  const file=e.target.files[0];
+  if (!file) return;
+  const reader=new FileReader();
+  reader.onload=async(ev)=>{
+    try {
+      const backup=JSON.parse(ev.target.result);
+      if (!backup.simPositions&&!backup.closedPositions) throw new Error("File non valido");
+      if (!confirm(`Ripristinare backup del ${backup.date?.slice(0,10)||"?"}?\n• ${backup.simPositions?.length||0} posizioni aperte\n• ${backup.closedPositions?.length||0} chiuse`)) return;
+      const all=[...(backup.simPositions||[]),...(backup.closedPositions||[])];
+      for (const p of all) {
+        p.user_id=currentUser;
+        try { await sbFetch("sim_positions","POST",[p]); } catch(err) {
+          try { await sbFetch(`sim_positions?id=eq.${p.id}`,"PATCH",[{...p}],true); } catch(e2) {}
+        }
+      }
+      if (backup.lastRanking?.length>0) {
+        lastRanking=backup.lastRanking;
+        try { localStorage.setItem("sim_ranking_"+currentUser,JSON.stringify(lastRanking)); } catch(e){}
+      }
+      if (backup.capital && el("simCapital")) el("simCapital").value=backup.capital;
+      if (backup.profile && el("simProfile")) el("simProfile").value=backup.profile;
+      e.target.value="";
+      await loadAllData(); renderAll();
+      alert(`✅ Ripristinato:\n• ${backup.simPositions?.length||0} posizioni aperte\n• ${backup.closedPositions?.length||0} chiuse`);
+    } catch(err) { alert("Errore: "+err.message); }
+  };
+  reader.readAsText(file);
+});
+
+// ── SELECT BY PROFILE ─────────────────────────────────────────────────
+function selectByProfile(scored, prof) {
+  const sel=[],sc={},total=Object.values(prof.weights).reduce((s,v)=>s+v,0);
+  const slots={};
+  Object.entries(prof.weights).forEach(([sec,pct])=>{slots[sec]=Math.max(1,Math.round((pct/total)*prof.n));});
+  for (const s of scored) {
+    const sec=s.sector||"Altro";
+    const match=Object.keys(slots).find(k=>sec.toLowerCase().includes(k.toLowerCase())||k.toLowerCase().includes(sec.toLowerCase()));
+    if (match&&(sc[match]||0)<slots[match]) { sel.push(s); sc[match]=(sc[match]||0)+1; }
+    if (sel.length>=prof.n) break;
+  }
+  for (const s of scored) { if (sel.length>=prof.n) break; if (!sel.find(x=>x.ticker===s.ticker)) sel.push(s); }
+  return sel.slice(0,prof.n);
+}
 
 // ── TECH SCORE ────────────────────────────────────────────────────────
 function calcSMA(c,p){if(c.length<p)return null;return c.slice(-p).reduce((a,b)=>a+b,0)/p;}
@@ -1058,7 +1352,7 @@ function calcScore(c,h,l,fd={}){
   const tn=((ts+7)/14)*10;
   let fs=5;
   const fv=fd.fair_value_label;const au=fd.analyst_upside;const pe=fd.pe;const cf=fd.cash_flow_label;
-  if(fv==="Sottovalutato")fs+=2;else if(fv==="Moderatamente sottovalutato")fs+=1;else if(fv==="Sopravvalutato")fs-=2;else if(fv==="Moderatamente sopravvalutato")fs-=1;
+  if(fv==="Sottovalutato"||fv==="Affare")fs+=2;else if(fv==="Moderatamente sottovalutato")fs+=1;else if(fv==="Sopravvalutato")fs-=2;else if(fv==="Moderatamente sopravvalutato")fs-=1;
   if(au>30)fs+=2;else if(au>15)fs+=1;else if(au<0)fs-=1;
   if(pe&&pe<15)fs+=1;else if(pe&&pe>30)fs-=1;
   if(cf==="Eccellente"||cf==="Ottima")fs+=1;else if(cf==="Debole")fs-=1;
@@ -1068,183 +1362,6 @@ function calcScore(c,h,l,fd={}){
   const tc=ts>=5?"#00d4b8":ts>=2?"#80ed99":ts>=-1?"#ffd23f":ts>=-4?"#ff9f1c":"#ff6b6b";
   return{composite:comp,techScore:ts,techRating:tr,techColor:tc,rsi};
 }
-
-function selectByProfile(scored, prof) {
-  const sel=[],sc={},total=Object.values(prof.weights).reduce((s,v)=>s+v,0);
-  const slots={};
-  Object.entries(prof.weights).forEach(([sec,pct])=>{slots[sec]=Math.max(1,Math.round((pct/total)*prof.n));});
-  for(const s of scored){
-    const sec=s.sector||"Altro";
-    const match=Object.keys(slots).find(k=>sec.toLowerCase().includes(k.toLowerCase())||k.toLowerCase().includes(sec.toLowerCase()));
-    if(match&&(sc[match]||0)<slots[match]){sel.push(s);sc[match]=(sc[match]||0)+1;}
-    if(sel.length>=prof.n)break;
-  }
-  for(const s of scored){if(sel.length>=prof.n)break;if(!sel.find(x=>x.ticker===s.ticker))sel.push(s);}
-  return sel.slice(0,prof.n);
-}
-
-
-// ── IMPORT POSIZIONI DA EXCEL ─────────────────────────────────────────
-document.getElementById("btnImportPos")?.addEventListener("click", () => { 
-  document.getElementById("posExcelInput").click(); 
-});
-
-document.getElementById("posExcelInput")?.addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async (ev) => {
-    try {
-      const wb = XLSX.read(ev.target.result, {type:"binary"});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws, {header:1});
-
-      // Find header row
-      let headerRowIdx = 0, headerRow = [];
-      for (let i = 0; i < Math.min(data.length, 10); i++) {
-        const rowStr = (data[i]||[]).map(c=>String(c||"").toLowerCase()).join(",");
-        if (rowStr.includes("ticker") || rowStr.includes("data")) { headerRowIdx = i; headerRow = data[i]; break; }
-      }
-      const headers = headerRow.map(h => String(h||"").toLowerCase().trim());
-      const iIdx = name => headers.findIndex(h => h.includes(name));
-
-      // Colonne: DATA - TICKER - TITOLO - SETTORE - AZ.(QTÀ) - PREZZO CARICO - CAPITALE INVESTITO
-      const colData    = iIdx("data") !== -1 ? iIdx("data") : 0;
-      const colTicker  = iIdx("ticker") !== -1 ? iIdx("ticker") : 1;
-      const colNome    = iIdx("titolo") !== -1 ? iIdx("titolo") : (iIdx("nome") !== -1 ? iIdx("nome") : 2);
-      const colSector  = iIdx("settore") !== -1 ? iIdx("settore") : 3;
-      const colQty     = iIdx("az") !== -1 ? iIdx("az") : (iIdx("qt") !== -1 ? iIdx("qt") : 4);
-      const colPrice   = iIdx("prezzo") !== -1 ? iIdx("prezzo") : 5;
-
-      const rows = [];
-      for (const row of data.slice(headerRowIdx + 1)) {
-        if (!row || !row[colTicker]) continue;
-        const ticker = String(row[colTicker]).trim().toUpperCase();
-        if (!ticker || ticker.length < 2) continue;
-
-        // Check if already open
-        const existing = simPositions.find(p => p.ticker === ticker && p.status === "open");
-        if (existing) {
-          if (!confirm(`${ticker} è già in portafoglio. Sostituire?`)) continue;
-          await sbFetch(`sim_positions?id=eq.${existing.id}`, "DELETE");
-        }
-
-        // Parse date
-        let buyDate = "2025-04-01";
-        if (row[colData]) {
-          if (typeof row[colData] === "number") {
-            // Excel serial date
-            const d = new Date((row[colData] - 25569) * 86400 * 1000);
-            buyDate = d.toISOString().slice(0,10);
-          } else {
-            const parts = String(row[colData]).split(/[\/\-]/);
-            if (parts.length === 3) {
-              const [d, m, y] = parts;
-              buyDate = `${y.length===4?y:"20"+y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
-            }
-          }
-        }
-
-        const qty = parseInt(row[colQty]) || 1;
-        const buyPrice = parseFloat(String(row[colPrice]||"0").replace(",",".")) || 0;
-        if (!buyPrice) continue;
-
-        const w = watchlist.find(x => x.ticker === ticker);
-        rows.push({
-          id: "simpos_" + Date.now() + "_" + ticker + "_" + Math.random().toString(36).slice(2,6),
-          user_id: currentUser,
-          ticker, qty, buy_price: buyPrice, buy_date: buyDate,
-          name: row[colNome] || w?.name || ticker,
-          sector: row[colSector] || w?.sector || "Altro",
-          currency: "EUR",
-          stop_loss: parseFloat((buyPrice * 0.93).toFixed(4)),
-          profile: SIM_PROFILES[document.getElementById("simProfile")?.value||"bilanciato"]?.name || "Bilanciato",
-          status: "open",
-          current_price: w?.current_price_ref || buyPrice
-        });
-        await new Promise(r => setTimeout(r, 50));
-      }
-
-      if (rows.length === 0) { alert("Nessuna posizione trovata nel file."); return; }
-
-      for (const pos of rows) {
-        try { await sbFetch("sim_positions", "POST", [pos]); } catch(er) { console.error(er); }
-      }
-
-      e.target.value = "";
-      await loadAllData();
-      renderAll();
-      alert(`✅ Importate ${rows.length} posizioni dal file Excel.`);
-    } catch(err) { alert("Errore import: " + err.message); }
-  };
-  reader.readAsBinaryString(file);
-});
-
-
-// ── BACKUP / RESTORE ──────────────────────────────────────────────────
-window.exportBackup = function() {
-  const backup = {
-    version: 2,
-    date: new Date().toISOString(),
-    user: currentUser,
-    simPositions,
-    closedPositions,
-    watchlist,
-    lastRanking
-  };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], {type: "application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `sim_backup_${currentUser}_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-document.getElementById("btnImportBackup")?.addEventListener("click", () => {
-  document.getElementById("backupInput").click();
-});
-
-document.getElementById("backupInput")?.addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async (ev) => {
-    try {
-      const backup = JSON.parse(ev.target.result);
-      if (!backup.simPositions && !backup.closedPositions) throw new Error("File non valido");
-      if (!confirm(`Ripristinare backup del ${backup.date?.slice(0,10)||"?"} con ${backup.simPositions?.length||0} posizioni aperte e ${backup.closedPositions?.length||0} chiuse?`)) return;
-
-      // Save to Supabase
-      if (backup.simPositions?.length > 0) {
-        for (const p of backup.simPositions) {
-          p.user_id = currentUser;
-          try { await sbFetch("sim_positions", "POST", [p]); } catch(e) {
-            try { await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{...p}], true); } catch(e2) {}
-          }
-        }
-      }
-      if (backup.closedPositions?.length > 0) {
-        for (const p of backup.closedPositions) {
-          p.user_id = currentUser;
-          try { await sbFetch("sim_positions", "POST", [p]); } catch(e) {
-            try { await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{...p}], true); } catch(e2) {}
-          }
-        }
-      }
-      if (backup.lastRanking?.length > 0) {
-        lastRanking = backup.lastRanking;
-        try { localStorage.setItem("sim_ranking_"+currentUser, JSON.stringify(lastRanking)); } catch(e) {}
-      }
-
-      e.target.value = "";
-      await loadAllData();
-      renderAll();
-      alert(`✅ Backup ripristinato:\n• ${backup.simPositions?.length||0} posizioni aperte\n• ${backup.closedPositions?.length||0} operazioni chiuse`);
-    } catch(err) { alert("Errore: " + err.message); }
-  };
-  reader.readAsText(file);
-});
 
 // ── TELEGRAM ──────────────────────────────────────────────────────────
 async function sendTG(message) {
