@@ -292,19 +292,17 @@ let lastRanking = [];
 let closingId = null;
 let chartEquity = null;
 
-// ── SUPABASE ──────────────────────────────────────────────────────────
+// ── SUPABASE via Netlify proxy ───────────────────────────────────────
 async function sbFetch(path, method="GET", body=null, silent=false) {
   const opts = {
     method,
     headers: {
-      "apikey": SUPA_KEY,
-      "Authorization": "Bearer " + SUPA_KEY,
       "Content-Type": "application/json",
       "Prefer": method==="POST" ? "resolution=merge-duplicates,return=minimal" : "return=representation"
     }
   };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(SUPA_URL + "/rest/v1/" + path, opts);
+  const res = await fetch(`/.netlify/functions/supabase?path=${encodeURIComponent(path)}`, opts);
   const text = await res.text();
   if (!res.ok) {
     if (silent) return null;
@@ -520,7 +518,7 @@ function renderPositionsTable() {
       <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">€${inv.toFixed(0)}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${now>inv?"#00d4b8":"#ff6b6b"};">€${now.toFixed(0)}</td>
       <td><span class="chip ${plAbs>=0?'up':'down'}">${pl>=0?'+':''}${pl.toFixed(2)}%</span></td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${plCol};">${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${plCol};">${plAbs>=0?'+€':'−€'}${Math.abs(plAbs).toFixed(0)}</td>
       <td style="font-size:11px;color:${stopCol};">${p.stop_loss?"€"+parseFloat(p.stop_loss).toFixed(2):"--"}</td>
       <td>${score?`<span style="font-size:10px;font-weight:700;color:${sigCol};background:${sigCol}22;padding:2px 8px;border-radius:5px;">${sigTxt}</span>`:'--'}</td>
       <td style="font-size:10px;color:var(--dim);">${p.buy_date||""}</td>
@@ -538,7 +536,7 @@ function renderPositionsTable() {
     <td style="font-family:'JetBrains Mono',monospace;font-weight:700;">€${totalInv.toFixed(0)}</td>
     <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:${totalNow>totalInv?"#00d4b8":"#ff6b6b"};">€${totalNow.toFixed(0)}</td>
     <td><span class="chip ${totPL>=0?'up':'down'}">${totPct>=0?'+':''}${totPct.toFixed(2)}%</span></td>
-    <td style="font-weight:700;color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+':''}€${Math.abs(totPL).toFixed(0)}</td>
+    <td style="font-weight:700;color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+€':'−€'}${Math.abs(totPL).toFixed(0)}</td>
     <td colspan="4"></td>
   </tr>`;
   h += "</table></div>";
@@ -717,7 +715,7 @@ function renderClosedTable() {
       <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.buy_price).toFixed(2)}</td>
       <td style="font-family:'JetBrains Mono',monospace;">€${parseFloat(p.sell_price).toFixed(2)}</td>
       <td><span class="chip ${plAbs>=0?'up':'down'}">${pl>=0?'+':''}${pl.toFixed(2)}%</span></td>
-      <td style="font-weight:700;color:${plAbs>=0?'#00d4b8':'#ff6b6b'};">${plAbs>=0?'+':''}€${Math.abs(plAbs).toFixed(0)}</td>
+      <td style="font-weight:700;color:${plAbs>=0?'#00d4b8':'#ff6b6b'};">${plAbs>=0?'+€':'−€'}${Math.abs(plAbs).toFixed(0)}</td>
       <td>${icons[p.sell_reason]||""} ${p.sell_reason||""}</td>
       <td style="font-size:10px;color:var(--dim);">${p.buy_date||""}</td>
       <td style="font-size:10px;color:var(--dim);">${p.sell_date||""}</td>
@@ -725,7 +723,7 @@ function renderClosedTable() {
   });
   h += `<tr style="border-top:2px solid var(--line);background:var(--panel2);">
     <td colspan="6" style="padding:10px 8px;font-weight:700;">TOTALE REALIZZATO</td>
-    <td style="font-weight:700;color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+':''}€${Math.abs(totPL).toFixed(0)}</td>
+    <td style="font-weight:700;color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+€':'−€'}${Math.abs(totPL).toFixed(0)}</td>
     <td colspan="3"></td>
   </tr>`;
   h += "</table></div>";
@@ -745,7 +743,7 @@ function renderStats() {
   const pf = totL>0?(totG/totL).toFixed(2):"∞";
   const wr = (win.length/closedPositions.length*100).toFixed(1);
   wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
-    <div class="card"><div class="v" style="color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+':''}€${Math.abs(totPL).toFixed(0)}</div><div class="l">P&L Realizzato</div></div>
+    <div class="card"><div class="v" style="color:${totPL>=0?'#00d4b8':'#ff6b6b'};">${totPL>=0?'+€':'−€'}${Math.abs(totPL).toFixed(0)}</div><div class="l">P&L Realizzato</div></div>
     <div class="card"><div class="v">${closedPositions.length}</div><div class="l">Trade Totali</div></div>
     <div class="card"><div class="v" style="color:#00d4b8;">${win.length}</div><div class="l">Vincenti</div></div>
     <div class="card"><div class="v" style="color:#ff6b6b;">${los.length}</div><div class="l">Perdenti</div></div>
