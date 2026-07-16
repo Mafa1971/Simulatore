@@ -1151,11 +1151,12 @@ el("wlExcelInput")?.addEventListener("change", async (e) => {
       const iIdx = name => headers.findIndex(h=>h.includes(name));
       const colNome = iIdx("nome")!==-1?iIdx("nome"):0;
       const colTicker = iIdx("full ticker")!==-1?iIdx("full ticker"):(iIdx("ticker")!==-1?iIdx("ticker"):1);
+      // Colonna C (indice 2) = Sector
+      const colSector = iIdx("sector")!==-1?iIdx("sector"):(iIdx("settore")!==-1?iIdx("settore"):2);
       const colFairLabel = iIdx("fair value")!==-1?iIdx("fair value"):7;
       const colAnalyst = iIdx("rialzo")!==-1?iIdx("rialzo"):6;
       const colCash = iIdx("flusso di cassa")!==-1?iIdx("flusso di cassa"):5;
       const colPE = iIdx("prezzo/utile")!==-1?iIdx("prezzo/utile"):(iIdx("p/e")!==-1?iIdx("p/e"):17);
-      const colSector = iIdx("settore")!==-1?iIdx("settore"):-1;
 
       let added=0, updated=0, skipped=0;
       for (const row of data.slice(headerRowIdx+1)) {
