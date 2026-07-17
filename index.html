@@ -238,13 +238,17 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
 <div class="modal-overlay" id="modalCloseOverlay">
   <div class="modal">
     <h3>📤 Chiudi Posizione</h3>
-    <div style="font-size:12px;color:var(--dim);margin-bottom:14px;" id="closeInfo"></div>
-    <div class="fg"><label>Prezzo di Vendita €</label><input type="number" id="closePrice" step="any"></div>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:10px;" id="closeInfo"></div>
+    <div style="font-size:11px;color:#ffd23f;margin-bottom:12px;" id="closeQtyInfo"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="fg"><label>Prezzo di Vendita €</label><input type="number" id="closePrice" step="any"></div>
+      <div class="fg"><label>Quantità da Vendere</label><input type="number" id="closeQty" min="1" value="1"></div>
+    </div>
     <div class="fg"><label>Motivo</label>
       <select id="closeReason">
         <option value="target">🎯 Target Raggiunto</option>
         <option value="stop">🛑 Stop Loss -7%</option>
-        <option value="rotazione">🔄 Rotazione Mensile</option>
+        <option value="rotazione">🔄 Rotazione / Ribilanciamento</option>
         <option value="manuale">✋ Uscita Manuale</option>
       </select>
     </div>
@@ -1019,8 +1023,13 @@ window.openClose = function(id) {
   const p = simPositions.find(x=>x.id===id);
   if (p) {
     const info = el("closeInfo");
-    if (info) info.textContent = `${p.ticker} | Acq: €${parseFloat(p.buy_price).toFixed(2)} | Stop -7%: €${p.stop_loss?parseFloat(p.stop_loss).toFixed(2):"--"}`;
+    if (info) info.textContent = `${p.ticker} | Acq: €${parseFloat(p.buy_price).toFixed(2)} | Stop: €${p.stop_loss?parseFloat(p.stop_loss).toFixed(2):"--"}`;
     if (el("closePrice")) el("closePrice").value = p.current_price||p.buy_price;
+    // Set max qty
+    const qtyInput = el("closeQty");
+    if (qtyInput) { qtyInput.max = p.qty; qtyInput.value = p.qty; }
+    const qtyInfo = el("closeQtyInfo");
+    if (qtyInfo) qtyInfo.textContent = `Possiedi ${p.qty} azioni — inserisci quante vendere (parziale o totale)`;
   }
   el("modalCloseOverlay").classList.add("show");
 };
@@ -1031,14 +1040,38 @@ el("btnConfirmClose")?.addEventListener("click", async () => {
   const p = simPositions.find(x=>x.id===closingId);
   if (!p) return;
   const sellPrice = parseFloat(String(el("closePrice").value).replace(",","."));
+  const sellQty = parseInt(el("closeQty")?.value || p.qty);
   const reason = el("closeReason").value;
   if (!sellPrice) { alert("Inserisci il prezzo"); return; }
+  if (sellQty <= 0 || sellQty > p.qty) { alert(`Quantità non valida. Possiedi ${p.qty} azioni.`); return; }
+
+  const isPartial = sellQty < p.qty;
   const plPct = ((sellPrice-p.buy_price)/p.buy_price*100);
-  const plAbs = (sellPrice-p.buy_price)*p.qty;
+  const plAbs = (sellPrice-p.buy_price)*sellQty;
+  const today = new Date().toISOString().slice(0,10);
+
   try {
-    await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{status:"closed",sell_price:sellPrice,sell_date:new Date().toISOString().slice(0,10),sell_reason:reason}]);
+    if (isPartial) {
+      // Create closed record for partial qty
+      const closedPos = {
+        id: "simpos_"+Date.now()+"_"+p.ticker+"_partial",
+        user_id: currentUser, ticker: p.ticker, name: p.name,
+        qty: sellQty, buy_price: p.buy_price, buy_date: p.buy_date,
+        currency: p.currency, sector: p.sector, profile: p.profile,
+        status: "closed", sell_price: sellPrice, sell_date: today, sell_reason: reason
+      };
+      await sbFetch("sim_positions", "POST", [closedPos]);
+      // Update remaining qty
+      const remainQty = p.qty - sellQty;
+      await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{qty: remainQty}]);
+    } else {
+      // Full close
+      await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{status:"closed",sell_price:sellPrice,sell_date:today,sell_reason:reason}]);
+    }
+
     const icon = {target:"🎯",stop:"🛑",rotazione:"🔄",manuale:"✋"}[reason]||"📤";
-    await sendTG(`${icon} <b>CHIUSURA SIMULATA — ${p.ticker}</b>\n\n€${parseFloat(p.buy_price).toFixed(2)} → €${sellPrice.toFixed(2)}\nP&L: <b>${plPct>=0?'+':''}${plPct.toFixed(2)}% (${plAbs>=0?'+€':'−€'}${Math.abs(plAbs).toFixed(0)})</b>\n${reason}\n💧 Liquidità liberata: €${(sellPrice*p.qty).toFixed(0)}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+    const partial = isPartial ? ` (PARZIALE: ${sellQty}/${p.qty} az.)` : "";
+    await sendTG(`${icon} <b>CHIUSURA SIMULATA${partial} — ${p.ticker}</b>\n\n€${parseFloat(p.buy_price).toFixed(2)} → €${sellPrice.toFixed(2)}\nQty vendute: ${sellQty}${isPartial?` | Rimanenti: ${p.qty-sellQty}`:""}\nP&L: <b>${plPct>=0?'+':''}${plPct.toFixed(2)}% (${plAbs>=0?'+€':'−€'}${Math.abs(plAbs).toFixed(0)})</b>\n${reason}\n💧 Liquidità liberata: €${(sellPrice*sellQty).toFixed(0)}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
     el("modalCloseOverlay").classList.remove("show");
     await loadAllData();
     renderAll();
