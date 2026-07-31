@@ -767,16 +767,77 @@ function renderWatchlist() {
   const wrap = el("watchlistWrap");
   if (!wrap) return;
   const cnt = el("wlCount");
-  if (cnt) cnt.textContent = watchlist.length + " titoli";
 
   if (watchlist.length === 0) {
     wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Carica Portafoglio OLD o importa Excel</p></div>`;
     return;
   }
 
-  const sorted = [...watchlist].sort((a,b) => (b.score||0)-(a.score||0));
-  let h = `<div style="overflow-x:auto;"><table>
-    <tr><th>Ticker</th><th>Nome</th><th>Settore</th><th>P.Rif 01/04</th><th>Attuale</th><th>Δ%</th><th>Score</th><th>Segnale</th><th>Fair Value</th><th>Rialzo</th><th>Cash Flow</th><th>RSI</th><th></th></tr>`;
+  const sortKey = window.simWLSort_key || "score";
+  const sortDir = window.simWLDir || "desc";
+  const minScore = parseFloat(window.simWLMinScore || "0");
+  const filterSector = window.simWLSector || "";
+  const sectors = [...new Set(watchlist.map(w => w.sector||"Altro"))].sort();
+
+  let filtered = watchlist.filter(w => {
+    if (minScore > 0 && (w.score||0) < minScore) return false;
+    if (filterSector && w.sector !== filterSector) return false;
+    return true;
+  });
+
+  filtered.sort((a,b) => {
+    if (sortKey==="ticker") return sortDir==="asc"?a.ticker.localeCompare(b.ticker):b.ticker.localeCompare(a.ticker);
+    if (sortKey==="rsi") return sortDir==="asc"?(a.rsi||0)-(b.rsi||0):(b.rsi||0)-(a.rsi||0);
+    if (sortKey==="upside") return sortDir==="asc"?(a.analyst_upside||0)-(b.analyst_upside||0):(b.analyst_upside||0)-(a.analyst_upside||0);
+    if (sortKey==="delta") {
+      const da = a.buy_price_ref&&a.current_price_ref?((a.current_price_ref-a.buy_price_ref)/a.buy_price_ref*100):null;
+      const db = b.buy_price_ref&&b.current_price_ref?((b.current_price_ref-b.buy_price_ref)/b.buy_price_ref*100):null;
+      return sortDir==="asc"?(da||0)-(db||0):(db||0)-(da||0);
+    }
+    return sortDir==="asc"?(a.score||0)-(b.score||0):(b.score||0)-(a.score||0);
+  });
+
+  if (cnt) cnt.textContent = `${filtered.length}/${watchlist.length} titoli`;
+
+  const sortTh = (label, key) => {
+    const active = sortKey===key;
+    const arrow = active?(sortDir==="desc"?" ↓":" ↑"):"";
+    return `<th onclick="simWLSort('${key}')" style="cursor:pointer;padding:7px 8px;font-size:9px;color:${active?'var(--gold)':'var(--dim)'};letter-spacing:1px;text-transform:uppercase;user-select:none;">${label}${arrow}</th>`;
+  };
+
+  let h = `
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+    <select onchange="window.simWLMinScore=this.value;renderWatchlist()"
+      style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:5px 8px;border-radius:6px;font-size:11px;">
+      <option value="0">Tutti gli score</option>
+      <option value="5" ${minScore===5?'selected':''}>Score ≥ 5 (BUY)</option>
+      <option value="7" ${minScore===7?'selected':''}>Score ≥ 7 (STRONG BUY)</option>
+    </select>
+    <select onchange="window.simWLSector=this.value;renderWatchlist()"
+      style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:5px 8px;border-radius:6px;font-size:11px;">
+      <option value="">Tutti i settori</option>
+      ${sectors.map(s=>`<option value="${s}" ${filterSector===s?'selected':''}>${s}</option>`).join('')}
+    </select>
+    <span style="font-size:10px;color:var(--dim);margin-left:auto;">${filtered.length}/${watchlist.length} titoli</span>
+  </div>
+  <div style="overflow-x:auto;"><table>
+    <tr>
+      ${sortTh("Ticker","ticker")}
+      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Nome</th>
+      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Settore</th>
+      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">P.Rif 01/04</th>
+      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Attuale</th>
+      ${sortTh("Δ%","delta")}
+      ${sortTh("Score","score")}
+      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Segnale</th>
+      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Fair Value</th>
+      ${sortTh("Rialzo","upside")}
+      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Cash Flow</th>
+      ${sortTh("RSI","rsi")}
+      <th></th>
+    </tr>`;
+
+  const sorted = filtered;
 
   sorted.forEach(w => {
     const ref = w.buy_price_ref, cur = w.current_price_ref;
@@ -1892,11 +1953,24 @@ async function loadSimAIChart(ticker, range) {
     if (simAILineChart) { simAILineChart.destroy(); simAILineChart = null; }
     if (simAIVolumeChart) { simAIVolumeChart.destroy(); simAIVolumeChart = null; }
 
-    // Save volume data for card
-    if (aiCurrentData && volumes.length > 0) {
-      aiCurrentData._lastVolume = volumes[volumes.length-1];
-      aiCurrentData._lastVolMA = volSma20[volSma20.length-1];
-      setTimeout(() => renderSimAITechData(aiCurrentData.pos, aiCurrentData.wl), 100);
+    // Save volume and risk metrics for cards
+    if (aiCurrentData && closes.length > 10) {
+      aiCurrentData._lastVolume = volumes[volumes.length-1] || null;
+      aiCurrentData._lastVolMA = volSma20[volSma20.length-1] || null;
+      const validC = closes.filter(v => v != null);
+      const rets = validC.slice(1).map((c,i) => (c - validC[i]) / validC[i]);
+      let peak = validC[0], maxDD = 0;
+      for (const c of validC) { if (c > peak) peak = c; const d = (c-peak)/peak*100; if (d < maxDD) maxDD = d; }
+      aiCurrentData._maxDD = parseFloat(maxDD.toFixed(1));
+      const rfDaily = 0.035/252;
+      const avgRet = rets.reduce((a,b)=>a+b,0)/rets.length;
+      const stdDev = Math.sqrt(rets.reduce((a,r)=>a+Math.pow(r-avgRet,2),0)/rets.length)*Math.sqrt(252);
+      const downR = rets.filter(r => r < rfDaily);
+      const downDev = downR.length > 5 ? Math.sqrt(downR.reduce((a,r)=>a+Math.pow(r-rfDaily,2),0)/downR.length)*Math.sqrt(252) : null;
+      aiCurrentData._sharpe = stdDev > 0 ? parseFloat(((avgRet*252-0.035)/stdDev).toFixed(2)) : null;
+      aiCurrentData._sortino = downDev ? parseFloat(((avgRet*252-0.035)/downDev).toFixed(2)) : null;
+      aiCurrentData._volatility = parseFloat((stdDev*100).toFixed(1));
+      setTimeout(() => renderSimAITechData(aiCurrentData.pos, aiCurrentData.wl), 200);
     }
 
     simAILineChart = new Chart(pc.getContext("2d"), {
@@ -1965,6 +2039,16 @@ function renderSimAITechData(pos, wl) {
     else volCard = {l:"Volume",v:"Normale",col:"var(--dim)"};
   }
 
+  // Risk cards
+  const maxDD = aiCurrentData?._maxDD;
+  const sortino = aiCurrentData?._sortino;
+  const sharpe = aiCurrentData?._sharpe;
+  const vol = aiCurrentData?._volatility;
+  const ddCard = { l:"Max Drawdown", v:maxDD!=null?maxDD.toFixed(1)+"%":"--", col:maxDD>-5?"#00d4b8":maxDD>-10?"#80ed99":maxDD>-20?"#ffd23f":maxDD>-30?"#ff9f1c":"#ff6b6b" };
+  const sortinoCard = { l:"Sortino", v:sortino!=null?sortino.toFixed(2):"--", col:sortino>2?"#00d4b8":sortino>1?"#80ed99":sortino>0.5?"#ffd23f":sortino!=null?"#ff6b6b":"var(--dim)" };
+  const sharpeCard = { l:"Sharpe", v:sharpe!=null?sharpe.toFixed(2):"--", col:sharpe>1.5?"#00d4b8":sharpe>0.5?"#80ed99":sharpe>0?"#ffd23f":sharpe!=null?"#ff6b6b":"var(--dim)" };
+  const volCard2 = { l:"Volatilità", v:vol!=null?vol.toFixed(1)+"%":"--", col:vol<15?"#00d4b8":vol<25?"#ffd23f":vol<35?"#ff9f1c":"#ff6b6b" };
+
   const items = [
     {l:"Score",v:score?score.toFixed(1):"--",col:score>=7?"#00d4b8":score>=5?"#80ed99":score>=3?"#ffd23f":"#ff6b6b"},
     {l:"Segnale",v:signal,col:sigCol},
@@ -1973,7 +2057,11 @@ function renderSimAITechData(pos, wl) {
     {l:"Rialzo Anal.",v:upside!=null?(upside>0?"+":"")+upside+"%":"--",col:upside>0?"#00d4b8":"#ff6b6b"},
     {l:"P/E",v:pe?pe+"x":"--",col:pe&&pe<15?"#00d4b8":pe&&pe>30?"#ff6b6b":"var(--dim)"},
     {l:"Cash Flow",v:cf||"--",col:"var(--dim)"},
-    volCard
+    volCard,
+    ddCard,
+    sortinoCard,
+    sharpeCard,
+    volCard2
   ];
 
   wrap.innerHTML = items.map(i=>`
