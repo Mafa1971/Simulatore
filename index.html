@@ -850,8 +850,13 @@ function renderWatchlist() {
     const fvCol = fvC[w.fair_value_label]||"#7d8aa3";
     const inPos = simPositions.find(p => p.ticker === w.ticker);
 
-    h += `<tr style="${inPos?'background:#00d4b808;':''}">
-      <td><strong style="color:#4fa3ff;">${w.ticker}</strong>${inPos?'<div style="font-size:9px;color:#00d4b8;">✅ IN PORT.</div>':''}</td>
+    h += `<tr style="${inPos?'background:#00d4b808;border-left:3px solid #00d4b8;':''}">
+      <td>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <strong style="color:#4fa3ff;">${w.ticker}</strong>
+          ${inPos?`<span style="font-size:9px;font-weight:700;color:#00d4b8;background:#00d4b822;padding:1px 6px;border-radius:4px;">✅ IN PORT.</span>`:''}
+        </div>
+      </td>
       <td style="font-size:11px;">${w.name||""}</td>
       <td style="font-size:10px;color:var(--dim);">${w.sector||""}</td>
       <td style="font-family:'JetBrains Mono',monospace;color:var(--dim);">${ref?"€"+ref.toFixed(2):"--"}</td>
@@ -1360,12 +1365,11 @@ el("btnClearWL")?.addEventListener("click", async () => {
 
 window.simWLSort = function(key) {
   if (window.simWLSort_key === key) {
-    window.simWLDir = window.simWLDir==="desc"?"asc":"desc";
+    window.simWLDir = window.simWLDir === "desc" ? "asc" : "desc";
   } else {
     window.simWLSort_key = key;
     window.simWLDir = "desc";
   }
-  window.simWLSort = key;
   renderWatchlist();
 };
 
