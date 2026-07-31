@@ -128,6 +128,7 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
           <button class="btn success" onclick="exportBackup()">💾 BACKUP</button>
           <button class="btn ghost" id="btnImportBackup">📂 RIPRISTINA</button>
           <input type="file" id="backupInput" accept=".json" style="display:none;">
+          <button class="btn danger" onclick="resetSimulator()">🗑 RESET</button>
         </div>
         <div id="simStatus" style="margin-top:8px;font-size:11px;min-height:16px;"></div>
       </div>
@@ -259,7 +260,54 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
   </div>
 </div>
 
+<!-- MODAL AI ANALISI -->
+<div class="modal-overlay" id="modalSimAIOverlay">
+  <div class="modal" style="max-width:780px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+      <h3 id="simAITitle" style="font-size:17px;">🤖 Analisi AI</h3>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span id="simAIScore" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;"></span>
+        <button onclick="document.getElementById('modalSimAIOverlay').classList.remove('show')"
+          style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:20px;">✕</button>
+      </div>
+    </div>
+
+    <!-- GRAFICO -->
+    <div style="margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--line);">
+      <div id="simAIChartContainer" style="height:280px;"></div>
+      <div style="height:90px;border-top:1px solid var(--line);padding:6px 10px;background:var(--panel2);">
+        <div style="font-size:9px;color:var(--dim);margin-bottom:4px;">VOLUME | <span style="color:#00d4b8;">─</span> Rialzo <span style="color:#ff6b6b;">─</span> Ribasso <span style="color:#ffd23f;">─</span> MA20</div>
+        <canvas id="simAIVolCanvas" style="width:100%;height:65px;"></canvas>
+      </div>
+    </div>
+
+    <!-- DATI TECNICI -->
+    <div id="simAITechData" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px;"></div>
+
+    <!-- CHAT AI -->
+    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;display:flex;justify-content:space-between;">
+        <span>🤖 Analisi AI</span>
+        <button onclick="el('simAIChatHistory').innerHTML=''" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px;">↺ RESET</button>
+      </div>
+      <div id="simAIChatHistory" style="max-height:200px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input id="simAIQuestion" type="text" placeholder="Es: Analisi tecnica, Entrare ora?, Rischi..."
+          style="flex:1;background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:9px 12px;border-radius:8px;font-family:'Manrope',sans-serif;font-size:12px;outline:none;"
+          onkeydown="if(event.key==='Enter')askSimAI()">
+        <button onclick="askSimAI()" class="btn primary">Chiedi →</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <button onclick="setSimQ('Analisi tecnica completa')" class="btn ghost" style="font-size:10px;padding:3px 8px;">📊 Analisi</button>
+        <button onclick="setSimQ('È un buon momento per entrare?')" class="btn ghost" style="font-size:10px;padding:3px 8px;">🎯 Entrare?</button>
+        <button onclick="setSimQ('Quali sono i rischi principali?')" class="btn ghost" style="font-size:10px;padding:3px 8px;">⚠ Rischi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+
 // ── CONFIG ────────────────────────────────────────────────────────────
 const USERS = {
   fabrizio: { password: "Marinportfoglio2026.", name: "FABRIZIO" },
@@ -549,7 +597,11 @@ function renderPositionsTable() {
       <td style="font-size:11px;color:${stopCol};">${p.stop_loss?"€"+parseFloat(p.stop_loss).toFixed(2):"--"}</td>
       <td>${sc?`<span style="font-size:11px;font-weight:700;color:${scCol};">${sc.toFixed(1)}</span>`:"--"}</td>
       <td style="font-size:10px;color:var(--dim);">${p.buy_date||""}</td>
-      <td><button onclick="openClose('${p.id}')" style="background:#ff6b6b22;color:#ff6b6b;border:1px solid #ff6b6b44;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:700;">CHIUDI</button></td>
+      <td style="display:flex;gap:6px;">
+        <button onclick="openClose('${p.id}')" style="background:#ff6b6b22;color:#ff6b6b;border:1px solid #ff6b6b44;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:700;">CHIUDI</button>
+        <button onclick="openSimAI('${p.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;">🤖</button>
+        <button onclick="deletePosition('${p.id}')" style="background:none;border:none;color:#7d8aa3;cursor:pointer;font-size:14px;" title="Elimina senza statistica">✕</button>
+      </td>
     </tr>`;
   });
 
@@ -752,7 +804,8 @@ function renderWatchlist() {
       <td style="font-size:11px;color:${w.rsi>70?"#ff7700":w.rsi<30?"#00d4b8":"var(--dim)"};">${w.rsi?w.rsi.toFixed(0):"--"}</td>
       <td>
         ${!inPos?`<button onclick="openBuyFrom('${w.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:700;">+ APRI</button>`:""}
-        <button onclick="removeFromWL('${w.id}')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:13px;margin-left:4px;">✕</button>
+        <button onclick="openSimAI('${w.ticker}')" style="background:none;border:none;color:#00d4b8;cursor:pointer;font-size:14px;" title="Analisi AI">🤖</button>
+        <button onclick="removeFromWL('${w.id}')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:13px;">✕</button>
       </td>
     </tr>`;
   });
@@ -1091,7 +1144,19 @@ window.runAnalysis = async function() {
       const closes = (quote.close||[]).filter(v=>v!=null);
       const highs = quote.high||[], lows = quote.low||[];
       if (closes.length < 20) continue;
-      const sd = calcScore(closes, highs, lows, w);
+      const sd = calcScore(closes, highs, lows, {
+        fairValueLabel: w.fair_value_label || w.fairValueLabel,
+        analystUpside: w.analyst_upside || w.analystUpside,
+        pe: w.pe,
+        cashFlowLabel: w.cash_flow_label || w.cashFlowLabel,
+        piotroski: w.piotroski,
+        debtEquity: w.debt_equity || w.debtEquity,
+        roic: w.roic,
+        revenueGrowth: w.revenue_growth || w.revenueGrowth,
+        ebitdaMargin: w.ebitda_margin || w.ebitdaMargin,
+        pegRatio: w.peg_ratio || w.pegRatio,
+        netMargin: w.net_margin || w.netMargin
+      });
       const price = result?.meta?.regularMarketPrice;
       w.rsi = sd.rsi; w.score = sd.composite; w.techRating = sd.techRating; w.techColor = sd.techColor;
       if (price) w.current_price_ref = price;
@@ -1232,6 +1297,17 @@ el("btnClearWL")?.addEventListener("click", async () => {
   try { await sbFetch(`sim_universe?user_id=eq.${currentUser}`,"DELETE"); watchlist=[]; renderWatchlist(); renderHero(); } catch(e) { alert("Errore: "+e.message); }
 });
 
+window.simWLSort = function(key) {
+  if (window.simWLSort_key === key) {
+    window.simWLDir = window.simWLDir==="desc"?"asc":"desc";
+  } else {
+    window.simWLSort_key = key;
+    window.simWLDir = "desc";
+  }
+  window.simWLSort = key;
+  renderWatchlist();
+};
+
 // ── IMPORT POSIZIONI EXCEL ─────────────────────────────────────────────
 el("btnImportPos")?.addEventListener("click", () => { el("posExcelInput")?.click(); });
 
@@ -1370,32 +1446,597 @@ function selectByProfile(scored, prof) {
 }
 
 // ── TECH SCORE ────────────────────────────────────────────────────────
-function calcSMA(c,p){if(c.length<p)return null;return c.slice(-p).reduce((a,b)=>a+b,0)/p;}
-function calcEMA(c,p){if(c.length<p)return null;const k=2/(p+1);let e=c.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=p;i<c.length;i++)e=c[i]*k+e*(1-k);return e;}
-function calcMACD(c){if(c.length<26)return{macd:null,signal:null};const e12=calcEMA(c,12),e26=calcEMA(c,26),m=e12-e26;const mv=[];for(let i=26;i<=c.length;i++){const a=calcEMA(c.slice(0,i),12),b=calcEMA(c.slice(0,i),26);if(a&&b)mv.push(a-b);}return{macd:m,signal:mv.length>=9?calcEMA(mv,9):null};}
-function calcRSI(c,p=14){if(c.length<p+1)return null;const r=c.slice(-(p+1));let g=0,l=0;for(let i=1;i<r.length;i++){const d=r[i]-r[i-1];if(d>0)g+=d;else l-=d;}const ag=g/p,al=l/p;if(al===0)return 100;return 100-(100/(1+ag/al));}
-function calcIchimoku(c,h,l){if(!h||!l||c.length<52)return{aboveKumo:null,tenkanAboveKijun:null};const hi=(a,n)=>Math.max(...a.slice(-n)),lo=(a,n)=>Math.min(...a.slice(-n));const tk=(hi(h,9)+lo(l,9))/2,kj=(hi(h,26)+lo(l,26))/2,sA=(tk+kj)/2,sB=(hi(h,52)+lo(l,52))/2;const pr=c[c.length-1];return{aboveKumo:pr>Math.max(sA,sB),belowKumo:pr<Math.min(sA,sB),tenkanAboveKijun:tk>kj};}
-function calcScore(c,h,l,fd={}){
-  const pr=c[c.length-1],s50=calcSMA(c,50),s200=calcSMA(c,200),rsi=calcRSI(c,14);
-  const{macd,signal}=calcMACD(c),ich=calcIchimoku(c,h,l);
-  let ts=0;
-  if(s50)ts+=pr>s50?1:-1;if(s200)ts+=pr>s200?1:-1;if(s50&&s200)ts+=s50>s200?1:-1;
-  if(rsi)ts+=rsi>50?1:rsi<30?1:-1;if(macd&&signal)ts+=macd>signal?1:-1;
-  if(ich.aboveKumo!==null)ts+=ich.aboveKumo?1:ich.belowKumo?-1:0;
-  if(ich.tenkanAboveKijun!==null)ts+=ich.tenkanAboveKijun?1:-1;
-  const tn=((ts+7)/14)*10;
-  let fs=5;
-  const fv=fd.fair_value_label;const au=fd.analyst_upside;const pe=fd.pe;const cf=fd.cash_flow_label;
-  if(fv==="Sottovalutato"||fv==="Affare")fs+=2;else if(fv==="Moderatamente sottovalutato")fs+=1;else if(fv==="Sopravvalutato")fs-=2;else if(fv==="Moderatamente sopravvalutato")fs-=1;
-  if(au>30)fs+=2;else if(au>15)fs+=1;else if(au<0)fs-=1;
-  if(pe&&pe<15)fs+=1;else if(pe&&pe>30)fs-=1;
-  if(cf==="Eccellente"||cf==="Ottima")fs+=1;else if(cf==="Debole")fs-=1;
-  fs=Math.max(0,Math.min(10,fs));
-  const comp=parseFloat((tn*0.6+fs*0.4).toFixed(1));
-  const tr=ts>=5?"Strong Buy":ts>=2?"Buy":ts>=-1?"Neutral":ts>=-4?"Sell":"Strong Sell";
-  const tc=ts>=5?"#00d4b8":ts>=2?"#80ed99":ts>=-1?"#ffd23f":ts>=-4?"#ff9f1c":"#ff6b6b";
-  return{composite:comp,techScore:ts,techRating:tr,techColor:tc,rsi};
+// ── SCORE COMPOSITO UNIFICATO ─────────────────────────────────────────
+// Usato sia nella Dashboard Portafoglio che nel Simulatore
+// Score finale 0-10 = Tecnico(40%) + Fondamentale(35%) + Rischio(25%)
+
+function calcSMA(c, p) {
+  if (c.length < p) return null;
+  return c.slice(-p).reduce((a, b) => a + b, 0) / p;
 }
+
+function calcEMA(c, p) {
+  if (c.length < p) return null;
+  const k = 2 / (p + 1);
+  let e = c.slice(0, p).reduce((a, b) => a + b, 0) / p;
+  for (let i = p; i < c.length; i++) e = c[i] * k + e * (1 - k);
+  return e;
+}
+
+function calcRSI(c, p = 14) {
+  if (c.length < p + 1) return null;
+  const r = c.slice(-(p + 1));
+  let g = 0, l = 0;
+  for (let i = 1; i < r.length; i++) {
+    const d = r[i] - r[i - 1];
+    if (d > 0) g += d; else l -= d;
+  }
+  const ag = g / p, al = l / p;
+  if (al === 0) return 100;
+  return 100 - (100 / (1 + ag / al));
+}
+
+function calcMACD(c) {
+  if (c.length < 26) return { macd: null, signal: null, hist: null };
+  const e12 = calcEMA(c, 12), e26 = calcEMA(c, 26);
+  const m = e12 - e26;
+  const mv = [];
+  for (let i = 26; i <= c.length; i++) {
+    const a = calcEMA(c.slice(0, i), 12), b = calcEMA(c.slice(0, i), 26);
+    if (a && b) mv.push(a - b);
+  }
+  const signal = mv.length >= 9 ? calcEMA(mv, 9) : null;
+  return { macd: m, signal, hist: signal ? m - signal : null };
+}
+
+function calcIchimoku(c, h, l) {
+  if (!h || !l || c.length < 52) return { aboveKumo: null, tenkanAboveKijun: null };
+  const hi = (a, n) => Math.max(...a.slice(-n));
+  const lo = (a, n) => Math.min(...a.slice(-n));
+  const tk = (hi(h, 9) + lo(l, 9)) / 2;
+  const kj = (hi(h, 26) + lo(l, 26)) / 2;
+  const sA = (tk + kj) / 2;
+  const sB = (hi(h, 52) + lo(l, 52)) / 2;
+  const pr = c[c.length - 1];
+  return {
+    aboveKumo: pr > Math.max(sA, sB),
+    belowKumo: pr < Math.min(sA, sB),
+    tenkanAboveKijun: tk > kj,
+    tenkan: tk, kijun: kj
+  };
+}
+
+function calcSortino(returns, rfAnnual = 0.035) {
+  if (!returns || returns.length < 20) return null;
+  const rfDaily = rfAnnual / 252;
+  const avgRet = returns.reduce((a, b) => a + b, 0) / returns.length;
+  const downReturns = returns.filter(r => r < rfDaily);
+  if (downReturns.length < 3) return 3.0; // pochissime perdite = ottimo
+  const downDev = Math.sqrt(downReturns.reduce((a, r) => a + Math.pow(r - rfDaily, 2), 0) / downReturns.length) * Math.sqrt(252);
+  return downDev > 0 ? (avgRet * 252 - rfAnnual) / downDev : null;
+}
+
+function calcSharpe(returns, rfAnnual = 0.035) {
+  if (!returns || returns.length < 20) return null;
+  const avgRet = returns.reduce((a, b) => a + b, 0) / returns.length;
+  const stdDev = Math.sqrt(returns.reduce((a, r) => a + Math.pow(r - avgRet, 2), 0) / returns.length) * Math.sqrt(252);
+  return stdDev > 0 ? (avgRet * 252 - rfAnnual) / stdDev : null;
+}
+
+function calcMaxDrawdown(prices) {
+  if (!prices || prices.length < 10) return null;
+  let peak = prices[0], maxDD = 0;
+  for (const p of prices) {
+    if (p > peak) peak = p;
+    const dd = (p - peak) / peak * 100;
+    if (dd < maxDD) maxDD = dd;
+  }
+  return maxDD; // negativo
+}
+
+function calcVolatility(returns) {
+  if (!returns || returns.length < 10) return null;
+  const avg = returns.reduce((a, b) => a + b, 0) / returns.length;
+  return Math.sqrt(returns.reduce((a, r) => a + Math.pow(r - avg, 2), 0) / returns.length) * Math.sqrt(252) * 100;
+}
+
+function calcDailyReturns(prices) {
+  const returns = [];
+  for (let i = 1; i < prices.length; i++) {
+    if (prices[i] && prices[i - 1]) returns.push((prices[i] - prices[i - 1]) / prices[i - 1]);
+  }
+  return returns;
+}
+
+function calcVolumeScore(volumes) {
+  if (!volumes || volumes.length < 20) return 0;
+  const recent = volumes.slice(-5).filter(v => v > 0);
+  const avg20 = volumes.slice(-20).filter(v => v > 0).reduce((a, b) => a + b, 0) / 20;
+  if (!avg20 || recent.length === 0) return 0;
+  const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const ratio = recentAvg / avg20;
+  if (ratio > 1.5) return 1;  // volume alto = conferma
+  if (ratio < 0.5) return -1; // volume basso = debolezza
+  return 0;
+}
+
+// ── SCORE PRINCIPALE ──────────────────────────────────────────────────
+function calcCompositeScoreV2(closes, highs, lows, volumes, fundamentals = {}) {
+  if (!closes || closes.length < 20) return null;
+
+  const pr = closes[closes.length - 1];
+  const returns = calcDailyReturns(closes);
+
+  // ── 1. MOMENTUM TECNICO (40%) ─────────────────────────────────────
+  let techScore = 0;
+  const sma21 = calcSMA(closes, 21);
+  const sma50 = calcSMA(closes, 50);
+  const sma200 = calcSMA(closes, 200);
+  const rsi = calcRSI(closes, 14);
+  const { macd, signal: macdSignal, hist } = calcMACD(closes);
+  const ich = calcIchimoku(closes, highs, lows);
+  const volScore = calcVolumeScore(volumes);
+
+  // SMA signals (max ±3)
+  if (sma21) techScore += pr > sma21 ? 1 : -1;
+  if (sma50) techScore += pr > sma50 ? 1 : -1;
+  if (sma200) techScore += pr > sma200 ? 1 : -1;
+  // Golden/Death cross
+  if (sma50 && sma200) techScore += sma50 > sma200 ? 1 : -1;
+  // RSI (max ±2)
+  if (rsi) {
+    if (rsi > 70) techScore -= 1;       // ipercomprato
+    else if (rsi > 55) techScore += 1;  // momentum positivo
+    else if (rsi < 30) techScore += 1;  // oversold = opportunità
+    else if (rsi < 45) techScore -= 1;  // debolezza
+  }
+  // MACD (max ±1)
+  if (macd && macdSignal) techScore += macd > macdSignal ? 1 : -1;
+  // MACD histogram increasing
+  if (hist && hist > 0) techScore += 0.5;
+  // Ichimoku (max ±2)
+  if (ich.aboveKumo !== null) techScore += ich.aboveKumo ? 1 : ich.belowKumo ? -1 : 0;
+  if (ich.tenkanAboveKijun !== null) techScore += ich.tenkanAboveKijun ? 0.5 : -0.5;
+  // Volume (max ±1)
+  techScore += volScore;
+
+  // Normalize -10 to +10 → 0 to 10
+  const techNorm = Math.max(0, Math.min(10, ((techScore + 10) / 20) * 10));
+
+  // ── 2. QUALITÀ FONDAMENTALE (35%) ────────────────────────────────
+  let fundScore = 5; // base neutra
+  const fv = fundamentals.fairValueLabel || fundamentals.fair_value_label;
+  const upside = fundamentals.analystUpside ?? fundamentals.analyst_upside ?? null;
+  const pe = fundamentals.pe;
+  const cf = fundamentals.cashFlowLabel || fundamentals.cash_flow_label;
+  const piotroski = fundamentals.piotroski;
+  const debtEq = fundamentals.debtEquity ?? fundamentals.debt_equity ?? null;
+  const roic = fundamentals.roic ?? fundamentals.returnOnCapital ?? null;
+  const revGrowth = fundamentals.revenueGrowth ?? fundamentals.rev_growth ?? null;
+  const ebitda = fundamentals.ebitdaMargin ?? fundamentals.ebitda_margin ?? null;
+  const peg = fundamentals.pegRatio ?? fundamentals.peg ?? null;
+
+  // Fair Value (max ±2)
+  if (fv === "Affare") fundScore += 2.5;
+  else if (fv === "Sottovalutato") fundScore += 2;
+  else if (fv === "Moderatamente sottovalutato") fundScore += 1;
+  else if (fv === "Moderatamente sopravvalutato") fundScore -= 1;
+  else if (fv === "Sopravvalutato") fundScore -= 2;
+
+  // Rialzo Analisti (max ±2)
+  if (upside > 40) fundScore += 2;
+  else if (upside > 20) fundScore += 1.5;
+  else if (upside > 10) fundScore += 0.5;
+  else if (upside < 0) fundScore -= 1.5;
+  else if (upside < -10) fundScore -= 2;
+
+  // P/E (max ±1)
+  if (pe > 0) {
+    if (pe < 10) fundScore += 1.5;
+    else if (pe < 18) fundScore += 1;
+    else if (pe < 25) fundScore += 0;
+    else if (pe < 35) fundScore -= 0.5;
+    else fundScore -= 1.5;
+  }
+
+  // Cash Flow (max ±1)
+  if (cf === "Eccellente" || cf === "Ottima") fundScore += 1;
+  else if (cf === "Buona") fundScore += 0.5;
+  else if (cf === "Debole") fundScore -= 1;
+
+  // Piotroski (max ±1.5)
+  if (piotroski != null) {
+    if (piotroski >= 8) fundScore += 1.5;
+    else if (piotroski >= 6) fundScore += 1;
+    else if (piotroski >= 4) fundScore += 0;
+    else if (piotroski < 3) fundScore -= 1.5;
+  }
+
+  // Debito/Equity (max ±1)
+  if (debtEq != null) {
+    if (debtEq < 0.3) fundScore += 1;
+    else if (debtEq < 0.8) fundScore += 0.5;
+    else if (debtEq > 2) fundScore -= 1;
+    else if (debtEq > 1.5) fundScore -= 0.5;
+  }
+
+  // ROIC (max ±1)
+  if (roic != null) {
+    if (roic > 20) fundScore += 1;
+    else if (roic > 10) fundScore += 0.5;
+    else if (roic < 5) fundScore -= 0.5;
+  }
+
+  // Crescita fatturato (max ±0.5)
+  if (revGrowth != null) {
+    if (revGrowth > 15) fundScore += 0.5;
+    else if (revGrowth > 5) fundScore += 0.25;
+    else if (revGrowth < -5) fundScore -= 0.5;
+  }
+
+  // PEG Ratio (max ±0.5)
+  if (peg != null && peg > 0) {
+    if (peg < 1) fundScore += 0.5;
+    else if (peg > 2) fundScore -= 0.5;
+  }
+
+  // EBITDA Margin (max ±0.5)
+  if (ebitda != null) {
+    if (ebitda > 30) fundScore += 0.5;
+    else if (ebitda > 15) fundScore += 0.25;
+    else if (ebitda < 5) fundScore -= 0.5;
+  }
+
+  const fundNorm = Math.max(0, Math.min(10, fundScore));
+
+  // ── 3. RISCHIO (25%) ─────────────────────────────────────────────
+  let riskScore = 5; // base neutra
+  const sortino = calcSortino(returns);
+  const sharpe = calcSharpe(returns);
+  const maxDD = calcMaxDrawdown(closes);
+  const vol = calcVolatility(returns);
+
+  // Sortino (max ±2)
+  if (sortino != null) {
+    if (sortino > 2) riskScore += 2;
+    else if (sortino > 1) riskScore += 1.5;
+    else if (sortino > 0.5) riskScore += 0.5;
+    else if (sortino < 0) riskScore -= 1.5;
+    else if (sortino < -1) riskScore -= 2;
+  }
+
+  // Sharpe (max ±1)
+  if (sharpe != null) {
+    if (sharpe > 1.5) riskScore += 1;
+    else if (sharpe > 0.5) riskScore += 0.5;
+    else if (sharpe < 0) riskScore -= 1;
+  }
+
+  // Max Drawdown (max ±2)
+  if (maxDD != null) {
+    if (maxDD > -5) riskScore += 1.5;
+    else if (maxDD > -10) riskScore += 0.5;
+    else if (maxDD > -20) riskScore -= 0.5;
+    else if (maxDD > -30) riskScore -= 1;
+    else riskScore -= 2;
+  }
+
+  // Volatilità annualizzata (max ±1)
+  if (vol != null) {
+    if (vol < 15) riskScore += 1;
+    else if (vol < 25) riskScore += 0;
+    else if (vol < 35) riskScore -= 0.5;
+    else riskScore -= 1;
+  }
+
+  const riskNorm = Math.max(0, Math.min(10, riskScore));
+
+  // ── SCORE FINALE ─────────────────────────────────────────────────
+  const composite = parseFloat((techNorm * 0.40 + fundNorm * 0.35 + riskNorm * 0.25).toFixed(1));
+
+  // Rating
+  const rating = composite >= 8 ? "STRONG BUY" : composite >= 6 ? "BUY" : composite >= 4 ? "NEUTRO" : composite >= 2 ? "SELL" : "STRONG SELL";
+  const ratingColor = composite >= 8 ? "#00d4b8" : composite >= 6 ? "#80ed99" : composite >= 4 ? "#ffd23f" : composite >= 2 ? "#ff9f1c" : "#ff6b6b";
+
+  // Tech rating
+  const techRating = techScore >= 5 ? "Strong Buy" : techScore >= 2 ? "Buy" : techScore >= -1 ? "Neutral" : techScore >= -4 ? "Sell" : "Strong Sell";
+  const techColor = techScore >= 5 ? "#00d4b8" : techScore >= 2 ? "#80ed99" : techScore >= -1 ? "#ffd23f" : techScore >= -4 ? "#ff9f1c" : "#ff6b6b";
+
+  return {
+    composite,
+    rating, ratingColor,
+    techScore, techNorm, techRating, techColor,
+    fundScore: fundNorm,
+    riskScore: riskNorm,
+    rsi, sma21, sma50, sma200,
+    macd, macdSignal, macdHist: hist,
+    sortino, sharpe, maxDD, volatility: vol,
+    ich
+  };
+}
+
+// Wrapper per compatibilità
+function calcScore(closes, highs, lows, fundamentals) {
+  const result = calcCompositeScoreV2(closes, highs, lows, [], fundamentals || {});
+  if (!result) return { composite: 5, techRating: "Neutral", techColor: "#ffd23f", rsi: null };
+  return result;
+}
+
+
+
+// ── RESET E ELIMINA ───────────────────────────────────────────────────
+window.resetSimulator = async function() {
+  if (!confirm(`⚠️ ATTENZIONE\nQuesto cancellerà TUTTE le posizioni aperte e chiuse di ${currentUser.toUpperCase()}.\nLe statistiche verranno azzerate.\n\nSei sicuro?`)) return;
+  if (!confirm("Conferma definitiva — questa azione non è reversibile.")) return;
+  try {
+    await sbFetch(`sim_positions?user_id=eq.${currentUser}`, "DELETE");
+    simPositions = [];
+    closedPositions = [];
+    try { localStorage.removeItem("sim_ranking_"+currentUser); } catch(e) {}
+    renderAll();
+    setStatus("✅ Simulatore resettato", "#00d4b8");
+  } catch(e) { alert("Errore: "+e.message); }
+};
+
+window.deletePosition = async function(id) {
+  if (!confirm("Eliminare questa posizione senza generare statistica?")) return;
+  try {
+    await sbFetch(`sim_positions?id=eq.${id}`, "DELETE");
+    simPositions = simPositions.filter(p => p.id !== id);
+    renderAll();
+  } catch(e) { alert("Errore: "+e.message); }
+};
+
+
+// ── AI ANALISI MODAL ──────────────────────────────────────────────────
+let aiCurrentTicker = null;
+let aiCurrentData = null;
+let simAILineChart = null;
+let simAIVolumeChart = null;
+
+function getSimTVTicker(t) {
+  if (t.endsWith(".MI")) return "MIL:" + t.replace(".MI","").replace("STMMI","STM");
+  if (t.endsWith(".PA")) return "EURONEXT:" + t.replace(".PA","");
+  if (t.endsWith(".DE")) return "XETR:" + t.replace(".DE","");
+  if (t.endsWith(".L"))  return "LSE:" + t.replace(".L","");
+  if (t.endsWith(".ST")) return "OMX:" + t.replace(".ST","");
+  return t;
+}
+
+window.openSimAI = async function(ticker) {
+  aiCurrentTicker = ticker;
+  const pos = simPositions.find(p => p.ticker === ticker);
+  const wl = watchlist.find(w => w.ticker === ticker);
+  aiCurrentData = { ticker, pos, wl };
+
+  const name = pos?.name || wl?.name || ticker;
+  el("simAITitle").textContent = `🤖 ${ticker} — ${name}`;
+
+  // Score badge
+  const score = pos?.score || wl?.score;
+  const badge = el("simAIScore");
+  if (badge && score) {
+    const col = score>=7?"#00d4b8":score>=5?"#80ed99":score>=3?"#ffd23f":"#ff6b6b";
+    badge.textContent = `Score: ${score.toFixed(1)}`;
+    badge.style.color = col;
+    badge.style.background = col+"22";
+  } else if (badge) badge.textContent = "";
+
+  // Load chart
+  await loadSimAIChart(ticker);
+
+  // Render tech data
+  renderSimAITechData(pos, wl);
+
+  // Reset chat
+  el("simAIChatHistory").innerHTML = "";
+  el("simAIQuestion").value = "";
+
+  el("modalSimAIOverlay").classList.add("show");
+};
+
+async function loadSimAIChart(ticker, range) {
+  const r = range || el("simAIChartRange")?.value || "6mo";
+  const container = el("simAIChartContainer");
+  if (!container) return;
+  const tvUrl = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(getSimTVTicker(ticker))}`;
+
+  container.innerHTML = `
+    <div style="height:100%;padding:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;color:var(--dim);">${ticker}</span>
+          <span style="font-size:10px;color:var(--dim);">
+            <span style="color:#ff9f1c;">─</span> Prezzo
+            <span style="color:#00d4b8;margin-left:4px;">─</span> SMA21
+            <span style="color:#ff0000;margin-left:4px;">─</span> SMA50
+            <span style="color:#c77dff;margin-left:4px;">- -</span> SMA200
+          </span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select id="simAIChartRange" onchange="loadSimAIChart('${ticker}')"
+            style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;">
+            <option value="3mo" ${r==='3mo'?'selected':''}>3 Mesi</option>
+            <option value="6mo" ${r==='6mo'?'selected':''}>6 Mesi</option>
+            <option value="1y" ${r==='1y'?'selected':''}>1 Anno</option>
+            <option value="2y" ${r==='2y'?'selected':''}>2 Anni</option>
+          </select>
+          <a href="${tvUrl}" target="_blank" style="font-size:10px;color:#4fa3ff;text-decoration:none;">📈 TV →</a>
+        </div>
+      </div>
+      <div id="simAIStatus" style="font-size:11px;color:var(--dim);text-align:center;padding:10px;">⏳ Caricamento...</div>
+      <canvas id="simAIPriceCanvas" style="display:none;width:100%;height:230px;"></canvas>
+    </div>`;
+
+  try {
+    const data = await fetchYahoo(ticker, r, "1d");
+    const result = data?.chart?.result?.[0];
+    const timestamps = result?.timestamp || [];
+    const closes = result?.indicators?.quote?.[0]?.close || [];
+    const volumes = result?.indicators?.quote?.[0]?.volume || [];
+    if (closes.filter(v=>v!=null).length < 5) {
+      el("simAIStatus").textContent = "Dati insufficienti";
+      return;
+    }
+    const sma21 = closes.map((_,i) => { const s=closes.slice(Math.max(0,i-20),i+1).filter(v=>v!=null); return s.length>=10?s.reduce((a,b)=>a+b,0)/s.length:null; });
+    const sma50 = closes.map((_,i) => { const s=closes.slice(Math.max(0,i-49),i+1).filter(v=>v!=null); return s.length>=20?s.reduce((a,b)=>a+b,0)/s.length:null; });
+    const sma200 = closes.map((_,i) => { const s=closes.slice(Math.max(0,i-199),i+1).filter(v=>v!=null); return s.length>=50?s.reduce((a,b)=>a+b,0)/s.length:null; });
+    const volSma20 = volumes.map((_,i) => { const s=volumes.slice(Math.max(0,i-19),i+1).filter(v=>v!=null&&v>0); return s.length>=5?s.reduce((a,b)=>a+b,0)/s.length:null; });
+    const labels = timestamps.map(ts => new Date(ts*1000).toLocaleDateString("it-IT",{month:"short",day:"numeric"}));
+
+    el("simAIStatus").style.display = "none";
+    const pc = el("simAIPriceCanvas");
+    if (!pc) return;
+    pc.style.display = "block";
+
+    if (simAILineChart) { simAILineChart.destroy(); simAILineChart = null; }
+    if (simAIVolumeChart) { simAIVolumeChart.destroy(); simAIVolumeChart = null; }
+
+    // Save volume data for card
+    if (aiCurrentData && volumes.length > 0) {
+      aiCurrentData._lastVolume = volumes[volumes.length-1];
+      aiCurrentData._lastVolMA = volSma20[volSma20.length-1];
+      setTimeout(() => renderSimAITechData(aiCurrentData.pos, aiCurrentData.wl), 100);
+    }
+
+    simAILineChart = new Chart(pc.getContext("2d"), {
+      type:"line",
+      data:{labels,datasets:[
+        {label:ticker,data:closes,borderColor:"#ff9f1c",backgroundColor:"rgba(255,159,28,0.06)",borderWidth:2,pointRadius:0,fill:true,tension:0.3,spanGaps:true},
+        {label:"SMA21",data:sma21,borderColor:"#00d4b8",borderWidth:1.5,pointRadius:0,tension:0.3,spanGaps:true},
+        {label:"SMA50",data:sma50,borderColor:"#ff0000",borderWidth:1.5,pointRadius:0,tension:0.3,spanGaps:true},
+        {label:"SMA200",data:sma200,borderColor:"#c77dff",borderWidth:1.5,pointRadius:0,tension:0.3,spanGaps:true,borderDash:[4,3]}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:"#7d8aa3",font:{size:10},boxWidth:12}},
+          tooltip:{mode:"index",intersect:false,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toFixed(2):"--"}`}}},
+        scales:{x:{ticks:{color:"#7d8aa3",font:{size:9},maxTicksLimit:8},grid:{color:"#1e2d45"}},
+                y:{ticks:{color:"#7d8aa3",font:{size:9}},grid:{color:"#1e2d45"}}},
+        interaction:{mode:"index",intersect:false}}
+    });
+
+    // Volume panel
+    const vc = el("simAIVolCanvas");
+    if (vc && volumes.length > 0) {
+      const volColors = closes.map((c,i) => {
+        const isUp = i>0&&c>=closes[i-1];
+        const aboveMA = volSma20[i]&&volumes[i]>volSma20[i]*1.2;
+        return aboveMA?(isUp?"rgba(0,212,184,1)":"rgba(255,107,107,1)"):(isUp?"rgba(0,212,184,0.45)":"rgba(255,107,107,0.45)");
+      });
+      simAIVolumeChart = new Chart(vc.getContext("2d"), {
+        type:"bar",
+        data:{labels,datasets:[
+          {label:"Volume",data:volumes,backgroundColor:volColors,borderWidth:0},
+          {label:"Vol MA20",data:volSma20,type:"line",borderColor:"#ffd23f",borderWidth:1.5,pointRadius:0,tension:0.3,spanGaps:true}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{labels:{color:"#7d8aa3",font:{size:9},boxWidth:10}},
+            tooltip:{mode:"index",intersect:false,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?(c.parsed.y/1e6).toFixed(1)+"M":"--"}`}}},
+          scales:{x:{ticks:{color:"#7d8aa3",font:{size:8},maxTicksLimit:6},grid:{color:"#1e2d45"}},
+                  y:{ticks:{color:"#7d8aa3",font:{size:8},callback:v=>(v/1e6).toFixed(0)+"M"},grid:{color:"#1e2d45"}}}}
+      });
+    }
+  } catch(err) {
+    const s = el("simAIStatus");
+    if (s) s.textContent = "Errore: "+err.message;
+  }
+}
+window.loadSimAIChart = loadSimAIChart;
+
+function renderSimAITechData(pos, wl) {
+  const wrap = el("simAITechData");
+  if (!wrap) return;
+  const score = pos?.score || wl?.score;
+  const rsi = pos?.rsi || wl?.rsi;
+  const fv = wl?.fair_value_label || pos?.fairValueLabel || "--";
+  const upside = wl?.analyst_upside ?? pos?.analystUpside ?? null;
+  const pe = wl?.pe ?? pos?.pe ?? null;
+  const cf = wl?.cash_flow_label || null;
+  const signal = score>=7?"STRONG BUY":score>=5?"BUY":score>=3?"NEUTRO":score?"SELL":"--";
+  const sigCol = score>=7?"#00d4b8":score>=5?"#80ed99":score>=3?"#ffd23f":"#ff6b6b";
+
+  // Volume card
+  let volCard = { l:"Volume", v:"--", col:"var(--dim)" };
+  const lv = aiCurrentData?._lastVolume, lvm = aiCurrentData?._lastVolMA;
+  if (lv && lvm) {
+    const ratio = lv/lvm;
+    if (ratio>1.5) volCard = {l:"Volume",v:`📢 ${ratio.toFixed(1)}x MA`,col:"#00d4b8"};
+    else if (ratio>1.2) volCard = {l:"Volume",v:`↑ ${ratio.toFixed(1)}x MA`,col:"#80ed99"};
+    else volCard = {l:"Volume",v:"Normale",col:"var(--dim)"};
+  }
+
+  const items = [
+    {l:"Score",v:score?score.toFixed(1):"--",col:score>=7?"#00d4b8":score>=5?"#80ed99":score>=3?"#ffd23f":"#ff6b6b"},
+    {l:"Segnale",v:signal,col:sigCol},
+    {l:"RSI",v:rsi?rsi.toFixed(0):"--",col:rsi>70?"#ff7700":rsi<30?"#00d4b8":"var(--dim)"},
+    {l:"Fair Value",v:fv,col:fv==="Sottovalutato"?"#00d4b8":fv==="Sopravvalutato"?"#ff6b6b":"#ffd23f"},
+    {l:"Rialzo Anal.",v:upside!=null?(upside>0?"+":"")+upside+"%":"--",col:upside>0?"#00d4b8":"#ff6b6b"},
+    {l:"P/E",v:pe?pe+"x":"--",col:pe&&pe<15?"#00d4b8":pe&&pe>30?"#ff6b6b":"var(--dim)"},
+    {l:"Cash Flow",v:cf||"--",col:"var(--dim)"},
+    volCard
+  ];
+
+  wrap.innerHTML = items.map(i=>`
+    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;">
+      <div style="font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">${i.l}</div>
+      <div style="font-size:13px;font-weight:700;color:${i.col};">${i.v}</div>
+    </div>`).join("");
+}
+
+window.setSimQ = function(q) {
+  el("simAIQuestion").value = q;
+  el("simAIQuestion").focus();
+};
+
+window.askSimAI = function() {
+  const question = el("simAIQuestion").value.trim();
+  if (!question) return;
+  const chatEl = el("simAIChatHistory");
+  const pos = aiCurrentData?.pos;
+  const wl = aiCurrentData?.wl;
+  const ticker = aiCurrentTicker;
+
+  chatEl.innerHTML += `<div style="align-self:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:10px 10px 0 10px;padding:8px 12px;font-size:12px;max-width:80%;">${question}</div>`;
+  el("simAIQuestion").value = "";
+
+  const score = pos?.score || wl?.score;
+  const rsi = pos?.rsi || wl?.rsi;
+  const fv = wl?.fair_value_label || "--";
+  const upside = wl?.analyst_upside ?? null;
+  const pe = wl?.pe ?? null;
+  const price = pos?.current_price || wl?.current_price_ref;
+  const stopLoss = pos?.stop_loss;
+  const q = question.toLowerCase();
+
+  // Rule-based analysis
+  const scoreText = !score?"Score non disponibile":score>=8?`🟢 Score eccellente (${score}/10)`:score>=6?`🟡 Score buono (${score}/10)`:score>=4?`🟠 Score neutro (${score}/10)`:`🔴 Score basso (${score}/10)`;
+  const rsiText = !rsi?"RSI non disponibile":rsi>75?`⚠️ RSI ${rsi.toFixed(0)} — ipercomprato`:rsi<25?`💎 RSI ${rsi.toFixed(0)} — ipervenduto`:`✅ RSI ${rsi.toFixed(0)} — neutrale`;
+  const fvText = fv==="Sottovalutato"?"💰 Sottovalutato":fv==="Sopravvalutato"?"🔴 Sopravvalutato":fv!=="--"?`Fair Value: ${fv}`:"";
+  const stopText = stopLoss&&price&&price<=stopLoss?`🛑 <strong>STOP LOSS RAGGIUNTO! Chiudi subito!</strong>`:"";
+
+  let answer = "";
+  if (q.includes("analisi")||q.includes("tecnica")) {
+    answer = `📊 <strong>Analisi — ${ticker}</strong><br><br>${scoreText}<br>${rsiText}<br>${fvText?fvText+"<br>":""}${upside!=null?`🎯 Rialzo analisti: ${upside>0?"+":""}${upside}%<br>`:""}${stopText}`;
+  } else if (q.includes("entr")||q.includes("compr")||q.includes("acquist")) {
+    const ok = score>=6&&rsi<65&&(fv==="Sottovalutato"||fv==="Affare"||fv==="Moderatamente sottovalutato");
+    answer = `🎯 <strong>Entrare su ${ticker}?</strong><br><br>${ok?"✅ Condizioni favorevoli":"⚠️ Condizioni non ottimali"}<br><br>${scoreText}<br>${rsiText}<br>${fvText?fvText+"<br>":""}<br>💡 <em>Valuta sempre il contesto. Non è consulenza finanziaria.</em>`;
+  } else if (q.includes("rischi")||q.includes("rischio")) {
+    const risks = [];
+    if (rsi>70) risks.push("🔴 RSI ipercomprato — rischio correzione");
+    if (score<4) risks.push("🔴 Score basso — trend negativo");
+    if (fv==="Sopravvalutato") risks.push("🔴 Sopravvalutato");
+    if (upside<0) risks.push("🔴 Target analisti sotto prezzo attuale");
+    if (pe&&pe>30) risks.push(`🟡 P/E elevato (${pe}x)`);
+    if (stopText) risks.push(stopText);
+    if (!risks.length) risks.push("✅ Nessun rischio critico rilevato");
+    answer = `⚠️ <strong>Rischi — ${ticker}</strong><br><br>${risks.join("<br>")}`;
+  } else {
+    answer = `🤖 <strong>${ticker}</strong> ${pos?"(simulato in portafoglio)":"(in watchlist)"}<br><br>${scoreText}<br>${rsiText}<br>${fvText?fvText+"<br>":""}${upside!=null?`🎯 Rialzo: ${upside>0?"+":""}${upside}%<br>`:""}${stopText}<br><br>💡 <em>Analisi basata su indicatori tecnici e fondamentali.</em>`;
+  }
+
+  chatEl.innerHTML += `<div style="align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:10px 10px 10px 0;padding:10px 12px;font-size:12px;max-width:90%;line-height:1.6;">${answer}</div>`;
+  chatEl.scrollTop = chatEl.scrollHeight;
+};
 
 // ── TELEGRAM ──────────────────────────────────────────────────────────
 async function sendTG(message) {
@@ -1406,6 +2047,7 @@ async function sendTG(message) {
     ]);
   } catch(e) {}
 }
+
 
 </script>
 </body>
