@@ -557,20 +557,35 @@ function renderPositionsTable() {
     wrap.innerHTML = `<div class="empty-state"><div class="ic">◌</div><p>Nessuna posizione aperta — usa + APRI POSIZIONE</p></div>`;
     return;
   }
+  // Sort positions
+  const posSort = window.simPosSort_key || "default";
+  const posSortDir = window.simPosSortDir || "asc";
+  let sortedPos = [...simPositions];
+  if (posSort === "ticker") sortedPos.sort((a,b) => posSortDir==="asc"?a.ticker.localeCompare(b.ticker):b.ticker.localeCompare(a.ticker));
+  else if (posSort === "pl") sortedPos.sort((a,b) => { const pa=((a.current_price||a.buy_price)-a.buy_price)/a.buy_price*100, pb=((b.current_price||b.buy_price)-b.buy_price)/b.buy_price*100; return posSortDir==="asc"?pa-pb:pb-pa; });
+  else if (posSort === "score") sortedPos.sort((a,b) => posSortDir==="asc"?(a.score||0)-(b.score||0):(b.score||0)-(a.score||0));
+  else if (posSort === "value") sortedPos.sort((a,b) => { const va=(a.current_price||a.buy_price)*a.qty, vb=(b.current_price||b.buy_price)*b.qty; return posSortDir==="asc"?va-vb:vb-va; });
+
   let totalInv=0, totalNow=0;
-  simPositions.forEach(p => {
+  sortedPos.forEach(p => {
     totalInv += (p.buy_price||0)*(p.qty||0);
     totalNow += (p.current_price||p.buy_price||0)*(p.qty||0);
   });
 
+  const sTh = (label, key) => {
+    const active = posSort===key;
+    const arrow = active?(posSortDir==="asc"?" ↑":" ↓"):"";
+    return `<th onclick="simPosSort('${key}')" style="cursor:pointer;padding:7px 8px;font-size:9px;color:${active?'var(--gold)':'var(--dim)'};letter-spacing:1px;text-transform:uppercase;user-select:none;">${label}${arrow}</th>`;
+  };
+
   let h = `<div style="overflow-x:auto;"><table>
     <tr>
-      <th>Ticker</th><th>Nome / Profilo</th><th>Settore</th><th>Qty</th>
-      <th>P.Acq 01/04</th><th>Prezzo Att.</th><th>Investito</th><th>Val. Att.</th>
-      <th>P&L %</th><th>P&L €</th><th>Stop -7%</th><th>Score</th><th>Data</th><th></th>
+      ${sTh("Ticker","ticker")}<th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Nome</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Settore</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Qty</th>
+      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">P.Acq</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Attuale</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Investito</th>${sTh("Val.Att.","value")}
+      ${sTh("P&L %","pl")}${sTh("P&L €","pl")}<th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Stop</th>${sTh("Score","score")}<th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Data</th><th></th>
     </tr>`;
 
-  simPositions.forEach(p => {
+  sortedPos.forEach(p => {
     const price = p.current_price || p.buy_price;
     const pl = ((price-p.buy_price)/p.buy_price*100);
     const plAbs = (price-p.buy_price)*p.qty;
@@ -584,7 +599,10 @@ function renderPositionsTable() {
     const scCol = sc>=7?"#00d4b8":sc>=5?"#80ed99":sc>=3?"#ffd23f":"#ff6b6b";
 
     h += `<tr style="${stopHit?'background:#ff6b6b08;border-left:3px solid #ff6b6b;':''}">
-      <td><strong style="color:#4fa3ff;">${p.ticker}</strong>${stopHit?'<div style="color:#ff6b6b;font-size:9px;font-weight:700;animation:pulse 1s infinite;">🛑 STOP LOSS</div>':''}</td>
+      <td>
+        <a href="${getSimTVTicker(p.ticker)?`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(getSimTVTicker(p.ticker))}`:'#'}" target="_blank" style="color:#4fa3ff;font-weight:700;text-decoration:none;">${p.ticker} 📈</a>
+        ${stopHit?'<div style="color:#ff6b6b;font-size:9px;font-weight:700;animation:pulse 1s infinite;">🛑 STOP LOSS</div>':''}
+      </td>
       <td style="font-size:11px;">${p.name||""}<div style="font-size:9px;color:var(--dim);">${p.profile||""}</div></td>
       <td style="font-size:10px;color:var(--dim);">${p.sector||""}</td>
       <td style="font-family:'JetBrains Mono',monospace;">${p.qty}</td>
@@ -853,7 +871,7 @@ function renderWatchlist() {
     h += `<tr style="${inPos?'background:#00d4b808;border-left:3px solid #00d4b8;':''}">
       <td>
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-          <strong style="color:#4fa3ff;">${w.ticker}</strong>
+          <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(getSimTVTicker(w.ticker))}" target="_blank" style="color:#4fa3ff;font-weight:700;text-decoration:none;">${w.ticker} 📈</a>
           ${inPos?`<span style="font-size:9px;font-weight:700;color:#00d4b8;background:#00d4b822;padding:1px 6px;border-radius:4px;">✅ IN PORT.</span>`:''}
         </div>
       </td>
@@ -2143,6 +2161,18 @@ Domanda: ${question}`;
   el("simAIQuestion").value = "";
 
 
+
+
+window.simPosSort = function(key) {
+  if (window.simPosSort_key === key) {
+    window.simPosSortDir = window.simPosSortDir === "asc" ? "desc" : "asc";
+  } else {
+    window.simPosSort_key = key;
+    window.simPosSortDir = key === "ticker" ? "asc" : "desc";
+  }
+  window.simPosSort_key = key;
+  renderPositionsTable();
+};
 
 // ── TELEGRAM ──────────────────────────────────────────────────────────
 async function sendTG(message) {
