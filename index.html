@@ -2080,8 +2080,8 @@ window.setSimQ = function(q) {
   el("simAIQuestion").focus();
 };
 
-window.askSimAI = function() {
-  const question = el("simAIQuestion").value.trim();
+window.askSimAI = async function() {
+  const question = el("simAIQuestion")?.value?.trim();
   if (!question) return;
   const chatEl = el("simAIChatHistory");
   const pos = aiCurrentData?.pos;
@@ -2089,7 +2089,9 @@ window.askSimAI = function() {
   const ticker = aiCurrentTicker;
 
   chatEl.innerHTML += `<div style="align-self:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:10px 10px 0 10px;padding:8px 12px;font-size:12px;max-width:80%;">${question}</div>`;
-  el("simAIQuestion").value = "";
+  chatEl.innerHTML += `<div id="simAILoading" style="align-self:flex-start;color:var(--dim);font-size:11px;padding:8px;">🤖 Analisi in corso...</div>`;
+  chatEl.scrollTop = chatEl.scrollHeight;
+  if (el("simAIQuestion")) el("simAIQuestion").value = "";
 
   const score = pos?.score || wl?.score;
   const rsi = pos?.rsi || wl?.rsi;
@@ -2098,37 +2100,49 @@ window.askSimAI = function() {
   const pe = wl?.pe ?? null;
   const price = pos?.current_price || wl?.current_price_ref;
   const stopLoss = pos?.stop_loss;
-  const q = question.toLowerCase();
+  const maxDD = aiCurrentData?._maxDD;
+  const sortino = aiCurrentData?._sortino;
+  const volatility = aiCurrentData?._volatility;
 
-  // Rule-based analysis
-  const scoreText = !score?"Score non disponibile":score>=8?`🟢 Score eccellente (${score}/10)`:score>=6?`🟡 Score buono (${score}/10)`:score>=4?`🟠 Score neutro (${score}/10)`:`🔴 Score basso (${score}/10)`;
-  const rsiText = !rsi?"RSI non disponibile":rsi>75?`⚠️ RSI ${rsi.toFixed(0)} — ipercomprato`:rsi<25?`💎 RSI ${rsi.toFixed(0)} — ipervenduto`:`✅ RSI ${rsi.toFixed(0)} — neutrale`;
-  const fvText = fv==="Sottovalutato"?"💰 Sottovalutato":fv==="Sopravvalutato"?"🔴 Sopravvalutato":fv!=="--"?`Fair Value: ${fv}`:"";
-  const stopText = stopLoss&&price&&price<=stopLoss?`🛑 <strong>STOP LOSS RAGGIUNTO! Chiudi subito!</strong>`:"";
+  const prompt = `Sei un esperto analista finanziario. Rispondi in italiano, conciso (max 250 parole). Usa emoji. Non sei consulente ufficiale.
 
-  let answer = "";
-  if (q.includes("analisi")||q.includes("tecnica")) {
-    answer = `📊 <strong>Analisi — ${ticker}</strong><br><br>${scoreText}<br>${rsiText}<br>${fvText?fvText+"<br>":""}${upside!=null?`🎯 Rialzo analisti: ${upside>0?"+":""}${upside}%<br>`:""}${stopText}`;
-  } else if (q.includes("entr")||q.includes("compr")||q.includes("acquist")) {
-    const ok = score>=6&&rsi<65&&(fv==="Sottovalutato"||fv==="Affare"||fv==="Moderatamente sottovalutato");
-    answer = `🎯 <strong>Entrare su ${ticker}?</strong><br><br>${ok?"✅ Condizioni favorevoli":"⚠️ Condizioni non ottimali"}<br><br>${scoreText}<br>${rsiText}<br>${fvText?fvText+"<br>":""}<br>💡 <em>Valuta sempre il contesto. Non è consulenza finanziaria.</em>`;
-  } else if (q.includes("rischi")||q.includes("rischio")) {
-    const risks = [];
-    if (rsi>70) risks.push("🔴 RSI ipercomprato — rischio correzione");
-    if (score<4) risks.push("🔴 Score basso — trend negativo");
-    if (fv==="Sopravvalutato") risks.push("🔴 Sopravvalutato");
-    if (upside<0) risks.push("🔴 Target analisti sotto prezzo attuale");
-    if (pe&&pe>30) risks.push(`🟡 P/E elevato (${pe}x)`);
-    if (stopText) risks.push(stopText);
-    if (!risks.length) risks.push("✅ Nessun rischio critico rilevato");
-    answer = `⚠️ <strong>Rischi — ${ticker}</strong><br><br>${risks.join("<br>")}`;
-  } else {
-    answer = `🤖 <strong>${ticker}</strong> ${pos?"(simulato in portafoglio)":"(in watchlist)"}<br><br>${scoreText}<br>${rsiText}<br>${fvText?fvText+"<br>":""}${upside!=null?`🎯 Rialzo: ${upside>0?"+":""}${upside}%<br>`:""}${stopText}<br><br>💡 <em>Analisi basata su indicatori tecnici e fondamentali.</em>`;
+Titolo: ${ticker} — ${pos?.name || wl?.name || ticker} ${pos ? `(simulato in portafoglio a €${pos.buy_price?.toFixed(2)})` : "(in watchlist)"}
+
+Dati disponibili:
+- Score composito: ${score?.toFixed(1) || "N/D"}/10
+- RSI: ${rsi?.toFixed(0) || "N/D"}
+- Prezzo attuale: ${price ? "€"+parseFloat(price).toFixed(2) : "N/D"}
+${stopLoss ? `- Stop Loss simulato: €${parseFloat(stopLoss).toFixed(2)}` : ""}
+- Fair Value: ${fv}
+- Rialzo analisti: ${upside != null ? upside+"%" : "N/D"}
+- P/E: ${pe ? pe+"x" : "N/D"}
+- Max Drawdown (1y): ${maxDD != null ? maxDD+"%" : "N/D"}
+- Sortino: ${sortino != null ? sortino : "N/D"}
+- Volatilità: ${volatility != null ? volatility+"%" : "N/D"}
+
+Domanda: ${question}`;
+
+  try {
+    const res = await fetch("/.netlify/functions/gemini", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    const answer = data.text || "Errore nella risposta.";
+    document.getElementById("simAILoading")?.remove();
+    chatEl.innerHTML += `<div style="align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:10px 10px 10px 0;padding:10px 12px;font-size:12px;max-width:90%;line-height:1.6;">${answer.replace(/\n/g,"<br>")}</div>`;
+    chatEl.scrollTop = chatEl.scrollHeight;
+  } catch(e) {
+    document.getElementById("simAILoading")?.remove();
+    chatEl.innerHTML += `<div style="color:#ff6b6b;font-size:11px;padding:8px;">Errore: ${e.message}</div>`;
   }
-
-  chatEl.innerHTML += `<div style="align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:10px 10px 10px 0;padding:10px 12px;font-size:12px;max-width:90%;line-height:1.6;">${answer}</div>`;
-  chatEl.scrollTop = chatEl.scrollHeight;
 };
+
+  chatEl.innerHTML += `<div style="align-self:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:10px 10px 0 10px;padding:8px 12px;font-size:12px;max-width:80%;">${question}</div>`;
+  el("simAIQuestion").value = "";
+
+
 
 // ── TELEGRAM ──────────────────────────────────────────────────────────
 async function sendTG(message) {
