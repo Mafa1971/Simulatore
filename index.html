@@ -445,6 +445,7 @@ function getLiquidity() {
 // ── INIT ──────────────────────────────────────────────────────────────
 async function init() {
   setStatus("⏳ Caricamento...");
+  loadSimAlerts();
   await loadAllData();
   if (watchlist.length === 0) await loadOldPortfolio();
   try {
@@ -1275,7 +1276,15 @@ window.refreshPrices = async function() {
         p.current_price = price;
         try { await sbFetch(`sim_positions?id=eq.${p.id}`, "PATCH", [{current_price:price}], true); } catch(e) {}
         if (p.stop_loss && price <= p.stop_loss) {
-          await sendTG(`🛑 <b>STOP LOSS SIMULATO — ${p.ticker}</b>\n\n💰 €${price.toFixed(2)} ≤ Stop €${parseFloat(p.stop_loss).toFixed(2)}\n⚠️ CHIUDI QUESTA POSIZIONE!\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+          const key = p.ticker + "_stop";
+          if (!simAlertedTickers.has(key)) {
+            simAlertedTickers.add(key);
+            saveSimAlerts();
+            await sendTG(`🛑 <b>STOP LOSS SIMULATO — ${p.ticker}</b>\n\n💰 €${price.toFixed(2)} ≤ Stop €${parseFloat(p.stop_loss).toFixed(2)}\n⚠️ CHIUDI QUESTA POSIZIONE!\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE VIRTUALE`);
+          }
+        } else if (p.stop_loss && price > p.stop_loss) {
+          simAlertedTickers.delete(p.ticker + "_stop");
+          saveSimAlerts();
         }
       }
       await new Promise(r=>setTimeout(r,400));
@@ -2174,7 +2183,19 @@ window.simPosSort = function(key) {
   renderPositionsTable();
 };
 
-// ── TELEGRAM ──────────────────────────────────────────────────────────
+// ── ALERT STATE PERSISTENTE ───────────────────────────────────────────
+const simAlertedTickers = new Set();
+function loadSimAlerts() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("simAlerts_" + (currentUser||"")) || "[]");
+    saved.forEach(k => simAlertedTickers.add(k));
+  } catch(e) {}
+}
+function saveSimAlerts() {
+  try { localStorage.setItem("simAlerts_" + currentUser, JSON.stringify([...simAlertedTickers])); } catch(e) {}
+}
+
+
 async function sendTG(message) {
   try {
     await Promise.all([
