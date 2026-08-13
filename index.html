@@ -1326,7 +1326,8 @@ window.refreshPrices = async function() {
           saveSimAlerts();
         }
       }
-    }
+    } catch(e) { console.error("Refresh price error:", p.ticker, e); }
+  }
     // Watchlist zone alerts
     for (const w of watchlist) {
       if (!w.current_price_ref) continue;
@@ -1358,10 +1359,7 @@ window.refreshPrices = async function() {
         }
         if (price > sup*(1+thr)) { simAlertedTickers.delete(keySup); saveSimAlerts(); }
       }
-      }
-      await new Promise(r=>setTimeout(r,400));
-    } catch(e) {}
-  }
+    }
   for (const w of watchlist) {
     try {
       const data = await fetchYahoo(w.ticker,"1d","1d");
@@ -1405,6 +1403,7 @@ window.openEditWL = function(id, ticker, alertPrice, alertPriceNote, alertSuppor
 };
 
 
+window.removeFromWL = async function(id) {
   if (!confirm("Rimuovere questo titolo dalla watchlist?")) return;
   try {
     await sbFetch(`sim_universe?id=eq.${id}`, "DELETE");
