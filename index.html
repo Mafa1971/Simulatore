@@ -306,6 +306,44 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
   </div>
 </div>
 
+<!-- MODAL EDIT LIVELLI WATCHLIST -->
+<div class="modal-overlay" id="modalEditWLOverlay">
+  <div class="modal" style="max-width:480px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 id="editWLTitle" style="font-size:16px;">✎ Modifica Livelli</h3>
+      <button onclick="document.getElementById('modalEditWLOverlay').classList.remove('show')"
+        style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:20px;">✕</button>
+    </div>
+    <input type="hidden" id="editWLId">
+    <div style="display:grid;gap:12px;">
+      <div>
+        <label style="font-size:10px;color:#ff6b6b;letter-spacing:1px;text-transform:uppercase;">🔴 Resistenza — prezzo livello</label>
+        <input type="number" id="editWLResPrice" step="any" placeholder="es. 205.00"
+          style="width:100%;background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:9px 12px;border-radius:8px;font-size:13px;margin-top:4px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:#ff6b6b;letter-spacing:1px;text-transform:uppercase;">🔴 Nota Resistenza</label>
+        <input type="text" id="editWLResNote" placeholder="es. Massimi storici — possibile correzione"
+          style="width:100%;background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:9px 12px;border-radius:8px;font-size:13px;margin-top:4px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:#ffd23f;letter-spacing:1px;text-transform:uppercase;">🟡 Supporto — prezzo livello</label>
+        <input type="number" id="editWLSupPrice" step="any" placeholder="es. 180.00"
+          style="width:100%;background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:9px 12px;border-radius:8px;font-size:13px;margin-top:4px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:#ffd23f;letter-spacing:1px;text-transform:uppercase;">🟡 Nota Supporto</label>
+        <input type="text" id="editWLSupNote" placeholder="es. Zona domanda — attendi pattern di conferma"
+          style="width:100%;background:var(--panel);border:1px solid var(--line);color:var(--txt);padding:9px 12px;border-radius:8px;font-size:13px;margin-top:4px;box-sizing:border-box;">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+      <button onclick="document.getElementById('modalEditWLOverlay').classList.remove('show')" class="btn ghost">Annulla</button>
+      <button onclick="saveEditWL()" class="btn primary">💾 Salva</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
 
@@ -1377,29 +1415,39 @@ window.refreshPrices = async function() {
 
 // ── WATCHLIST MANAGEMENT ──────────────────────────────────────────────
 window.openEditWL = function(id, ticker, alertPrice, alertPriceNote, alertSupport, alertSupportNote) {
-  const res = prompt(`🔴 RESISTENZA per ${ticker}\nPrezzo livello (lascia vuoto per rimuovere):`, alertPrice||"");
-  if (res === null) return;
-  const resNote = prompt(`🔴 Nota Resistenza:`, alertPriceNote||"");
-  if (resNote === null) return;
-  const sup = prompt(`🟡 SUPPORTO per ${ticker}\nPrezzo livello (lascia vuoto per rimuovere):`, alertSupport||"");
-  if (sup === null) return;
-  const supNote = prompt(`🟡 Nota Supporto:`, alertSupportNote||"");
-  if (supNote === null) return;
+  document.getElementById("editWLId").value = id;
+  document.getElementById("editWLTitle").textContent = `✎ Livelli — ${ticker}`;
+  document.getElementById("editWLResPrice").value = alertPrice && alertPrice !== "null" ? alertPrice : "";
+  document.getElementById("editWLResNote").value = alertPriceNote || "";
+  document.getElementById("editWLSupPrice").value = alertSupport && alertSupport !== "null" ? alertSupport : "";
+  document.getElementById("editWLSupNote").value = alertSupportNote || "";
+  document.getElementById("modalEditWLOverlay").classList.add("show");
+};
+
+window.saveEditWL = async function() {
+  const id = document.getElementById("editWLId").value;
+  const resPrice = parseFloat(document.getElementById("editWLResPrice").value) || null;
+  const resNote = document.getElementById("editWLResNote").value.trim() || null;
+  const supPrice = parseFloat(document.getElementById("editWLSupPrice").value) || null;
+  const supNote = document.getElementById("editWLSupNote").value.trim() || null;
 
   const w = watchlist.find(w => w.id === id);
   if (w) {
-    w.alert_price = res ? parseFloat(res) : null;
-    w.alert_price_note = resNote || null;
-    w.alert_support = sup ? parseFloat(sup) : null;
-    w.alert_support_note = supNote || null;
-    sbFetch(`sim_universe?id=eq.${id}`, "PATCH", [{
-      alert_price: w.alert_price,
-      alert_price_note: w.alert_price_note,
-      alert_support: w.alert_support,
-      alert_support_note: w.alert_support_note
-    }], true).catch(e => console.error(e));
+    w.alert_price = resPrice;
+    w.alert_price_note = resNote;
+    w.alert_support = supPrice;
+    w.alert_support_note = supNote;
+    try {
+      await sbFetch(`sim_universe?id=eq.${id}`, "PATCH", [{
+        alert_price: resPrice,
+        alert_price_note: resNote,
+        alert_support: supPrice,
+        alert_support_note: supNote
+      }], true);
+    } catch(e) { console.error(e); }
     renderWatchlist();
   }
+  document.getElementById("modalEditWLOverlay").classList.remove("show");
 };
 
 
