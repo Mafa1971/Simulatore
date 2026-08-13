@@ -108,7 +108,7 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
     <div id="tabDashboard" class="tab-content active">
       <div class="panel">
         <div class="panel-title">⚙️ CONTROLLI
-          <select id="simProfile" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:8px;font-size:11px;">
+          <select id="simProfile" onchange="saveSimPrefs()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:8px;font-size:11px;">
             <option value="conservativo">🛡️ Conservativo (8)</option>
             <option value="bilanciato" selected>⚖️ Bilanciato (10)</option>
             <option value="aggressivo">🚀 Aggressivo (12)</option>
@@ -116,7 +116,7 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
             <option value="buffett">🎩 Buffett (10)</option>
             <option value="tech">💻 Tech Focus (10)</option>
           </select>
-          <input type="number" id="simCapital" value="20000" step="1000"
+          <input type="number" id="simCapital" onchange="saveSimPrefs()" value="20000" step="1000"
             style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;width:120px;" placeholder="Capitale €">
           <button class="btn success" onclick="runAnalysis()">🔍 ANALIZZA</button>
           <button class="btn primary" onclick="openManualPosition()">+ APRI POSIZIONE</button>
@@ -308,6 +308,7 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
 
 <script>
 
+
 // ── CONFIG ────────────────────────────────────────────────────────────
 const USERS = {
   fabrizio: { password: "Marinportfoglio2026.", name: "FABRIZIO" },
@@ -433,6 +434,22 @@ function setStatus(msg, col) {
 
 function getCapital() { return parseFloat(el("simCapital")?.value || "20000") || 20000; }
 function getProfile() { return el("simProfile")?.value || "bilanciato"; }
+
+// Save profile/capital choices
+function saveSimPrefs() {
+  try {
+    localStorage.setItem("simProfile_"+currentUser, el("simProfile")?.value || "bilanciato");
+    localStorage.setItem("simCapital_"+currentUser, el("simCapital")?.value || "20000");
+  } catch(e) {}
+}
+function loadSimPrefs() {
+  try {
+    const profile = localStorage.getItem("simProfile_"+currentUser);
+    const capital = localStorage.getItem("simCapital_"+currentUser);
+    if (profile && el("simProfile")) el("simProfile").value = profile;
+    if (capital && el("simCapital")) el("simCapital").value = capital;
+  } catch(e) {}
+}
 function getProf() { return SIM_PROFILES[getProfile()]; }
 
 function getInvested() {
@@ -446,6 +463,7 @@ function getLiquidity() {
 async function init() {
   setStatus("⏳ Caricamento...");
   loadSimAlerts();
+  loadSimPrefs();
   await loadAllData();
   if (watchlist.length === 0) await loadOldPortfolio();
   try {
@@ -869,12 +887,32 @@ function renderWatchlist() {
     const fvCol = fvC[w.fair_value_label]||"#7d8aa3";
     const inPos = simPositions.find(p => p.ticker === w.ticker);
 
+    // Alert zone badge ±3%
+    let simAlertBadge = "";
+    if (w.current_price_ref != null) {
+      const pp = w.current_price_ref, thr = 0.03;
+      if (w.alert_price) {
+        const res = w.alert_price;
+        if (pp >= res*(1-thr) && pp <= res*(1+thr)) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ff6b6b;background:#ff6b6b22;border:1px solid #ff6b6b;padding:2px 6px;border-radius:6px;animation:pulse 1.5s infinite;">🔴 ZONA RESISTENZA</span>`;
+        else if (pp > res*(1+thr)) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ffd23f;background:#ffd23f22;border:1px solid #ffd23f;padding:2px 6px;border-radius:6px;animation:pulse 1.5s infinite;">🚀 BREAKOUT</span>`;
+      }
+      if (w.alert_support) {
+        const sup = w.alert_support;
+        if (pp >= sup*(1-thr) && pp <= sup*(1+thr)) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ffd23f;background:#ffd23f22;border:1px solid #ffd23f;padding:2px 6px;border-radius:6px;margin-left:3px;animation:pulse 1.5s infinite;">🟡 ZONA SUPPORTO</span>`;
+        else if (pp < sup*(1-thr)) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ff6b6b;background:#ff6b6b22;padding:2px 6px;border-radius:6px;margin-left:3px;">⚠️ SOTTO SUPPORTO</span>`;
+      }
+    }
+    const resNoteText = w.alert_price ? `<div style="font-size:10px;color:#ff6b6b80;">🔴 R: €${w.alert_price}${w.alert_price_note?" — "+w.alert_price_note:""}</div>` : "";
+    const supNoteText = w.alert_support ? `<div style="font-size:10px;color:#ffd23f80;">🟡 S: €${w.alert_support}${w.alert_support_note?" — "+w.alert_support_note:""}</div>` : "";
+
     h += `<tr style="${inPos?'background:#00d4b808;border-left:3px solid #00d4b8;':''}">
       <td>
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
           <a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(getSimTVTicker(w.ticker))}" target="_blank" style="color:#4fa3ff;font-weight:700;text-decoration:none;">${w.ticker} 📈</a>
           ${inPos?`<span style="font-size:9px;font-weight:700;color:#00d4b8;background:#00d4b822;padding:1px 6px;border-radius:4px;">✅ IN PORT.</span>`:''}
+          ${simAlertBadge}
         </div>
+        ${resNoteText}${supNoteText}
       </td>
       <td style="font-size:11px;">${w.name||""}</td>
       <td style="font-size:10px;color:var(--dim);">${w.sector||""}</td>
@@ -890,6 +928,7 @@ function renderWatchlist() {
       <td>
         ${!inPos?`<button onclick="openBuyFrom('${w.ticker}')" style="background:#00d4b822;color:#00d4b8;border:1px solid #00d4b844;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-weight:700;">+ APRI</button>`:""}
         <button onclick="openSimAI('${w.ticker}')" style="background:none;border:none;color:#00d4b8;cursor:pointer;font-size:14px;" title="Analisi AI">🤖</button>
+        <button onclick="openEditWL('${w.id}','${w.ticker}',${w.alert_price||'null'},'${w.alert_price_note||''}',${w.alert_support||'null'},'${w.alert_support_note||''}')" style="background:none;border:none;color:#ffd23f;cursor:pointer;font-size:13px;" title="Modifica livelli">✎</button>
         <button onclick="removeFromWL('${w.id}')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:13px;">✕</button>
       </td>
     </tr>`;
@@ -1287,6 +1326,39 @@ window.refreshPrices = async function() {
           saveSimAlerts();
         }
       }
+    }
+    // Watchlist zone alerts
+    for (const w of watchlist) {
+      if (!w.current_price_ref) continue;
+      const price = w.current_price_ref;
+      const thr = 0.03;
+      if (w.alert_price) {
+        const res = w.alert_price;
+        const keyRes = w.ticker+"_sim_res";
+        const keyBreak = w.ticker+"_sim_break";
+        if (price >= res*(1-thr) && price <= res*(1+thr) && !simAlertedTickers.has(keyRes)) {
+          simAlertedTickers.add(keyRes); saveSimAlerts();
+          const note = w.alert_price_note ? `\n📝 ${w.alert_price_note}` : "";
+          await sendTG(`🔴 <b>ZONA RESISTENZA SIM — ${w.ticker}</b>\n\n💰 €${price.toFixed(2)}\n🎯 Resistenza: €${res}${note}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE`);
+        }
+        if (price < res*(1-thr)) { simAlertedTickers.delete(keyRes); simAlertedTickers.delete(keyBreak); saveSimAlerts(); }
+        if (price > res*(1+thr) && !simAlertedTickers.has(keyBreak)) {
+          simAlertedTickers.add(keyBreak); saveSimAlerts();
+          const note = w.alert_price_note ? `\n📝 ${w.alert_price_note}` : "";
+          await sendTG(`🚀 <b>BREAKOUT SIM — ${w.ticker}</b>\n\n💰 €${price.toFixed(2)}\n🎯 Resistenza superata: €${res}${note}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE`);
+        }
+      }
+      if (w.alert_support) {
+        const sup = w.alert_support;
+        const keySup = w.ticker+"_sim_sup";
+        if (price >= sup*(1-thr) && price <= sup*(1+thr) && !simAlertedTickers.has(keySup)) {
+          simAlertedTickers.add(keySup); saveSimAlerts();
+          const note = w.alert_support_note ? `\n📝 ${w.alert_support_note}` : "";
+          await sendTG(`🟡 <b>ZONA SUPPORTO SIM — ${w.ticker}</b>\n\n💰 €${price.toFixed(2)}\n🎯 Supporto: €${sup}${note}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE`);
+        }
+        if (price > sup*(1+thr)) { simAlertedTickers.delete(keySup); saveSimAlerts(); }
+      }
+      }
       await new Promise(r=>setTimeout(r,400));
     } catch(e) {}
   }
@@ -1306,7 +1378,33 @@ window.refreshPrices = async function() {
 };
 
 // ── WATCHLIST MANAGEMENT ──────────────────────────────────────────────
-window.removeFromWL = async function(id) {
+window.openEditWL = function(id, ticker, alertPrice, alertPriceNote, alertSupport, alertSupportNote) {
+  const res = prompt(`🔴 RESISTENZA per ${ticker}\nPrezzo livello (lascia vuoto per rimuovere):`, alertPrice||"");
+  if (res === null) return;
+  const resNote = prompt(`🔴 Nota Resistenza:`, alertPriceNote||"");
+  if (resNote === null) return;
+  const sup = prompt(`🟡 SUPPORTO per ${ticker}\nPrezzo livello (lascia vuoto per rimuovere):`, alertSupport||"");
+  if (sup === null) return;
+  const supNote = prompt(`🟡 Nota Supporto:`, alertSupportNote||"");
+  if (supNote === null) return;
+
+  const w = watchlist.find(w => w.id === id);
+  if (w) {
+    w.alert_price = res ? parseFloat(res) : null;
+    w.alert_price_note = resNote || null;
+    w.alert_support = sup ? parseFloat(sup) : null;
+    w.alert_support_note = supNote || null;
+    sbFetch(`sim_universe?id=eq.${id}`, "PATCH", [{
+      alert_price: w.alert_price,
+      alert_price_note: w.alert_price_note,
+      alert_support: w.alert_support,
+      alert_support_note: w.alert_support_note
+    }], true).catch(e => console.error(e));
+    renderWatchlist();
+  }
+};
+
+
   if (!confirm("Rimuovere questo titolo dalla watchlist?")) return;
   try {
     await sbFetch(`sim_universe?id=eq.${id}`, "DELETE");
@@ -1984,8 +2082,10 @@ async function loadSimAIChart(ticker, range) {
     if (simAILineChart) { simAILineChart.destroy(); simAILineChart = null; }
     if (simAIVolumeChart) { simAIVolumeChart.destroy(); simAIVolumeChart = null; }
 
-    // Save volume and risk metrics for cards
+    // Save volume, risk metrics and SR levels
     if (aiCurrentData && closes.length > 10) {
+      const sr = calcSupportResistance(closes, highs||[], lows||[], Math.min(60, closes.length));
+      if (sr) aiCurrentData._sr = sr;
       aiCurrentData._lastVolume = volumes[volumes.length-1] || null;
       aiCurrentData._lastVolMA = volSma20[volSma20.length-1] || null;
       const validC = closes.filter(v => v != null);
@@ -2131,19 +2231,33 @@ window.askSimAI = async function() {
   const sortino = aiCurrentData?._sortino;
   const volatility = aiCurrentData?._volatility;
 
-  const prompt = `Sei un esperto analista finanziario. Rispondi in italiano, conciso (max 250 parole). Usa emoji. Non sei consulente ufficiale.
+  const sr = aiCurrentData?._sr;
+  const prompt = `Sei un esperto analista finanziario. Rispondi in italiano, conciso (max 280 parole). Usa emoji. Non sei consulente ufficiale.
 
 Titolo: ${ticker} — ${pos?.name || wl?.name || ticker} ${pos ? `(simulato in portafoglio a €${pos.buy_price?.toFixed(2)})` : "(in watchlist)"}
 
-Dati disponibili:
+Dati tecnici:
 - Score composito: ${score?.toFixed(1) || "N/D"}/10
 - RSI: ${rsi?.toFixed(0) || "N/D"}
 - Prezzo attuale: ${price ? "€"+parseFloat(price).toFixed(2) : "N/D"}
 ${stopLoss ? `- Stop Loss simulato: €${parseFloat(stopLoss).toFixed(2)}` : ""}
+
+Livelli tecnici chiave:
+- Pivot Point: ${sr ? "€"+sr.pivot.toFixed(2) : "N/D"}
+- Resistenza R1: ${sr ? "€"+sr.r1.toFixed(2) : "N/D"}
+- Resistenza R2: ${sr ? "€"+sr.r2.toFixed(2) : "N/D"}
+- Supporto S1: ${sr ? "€"+sr.s1.toFixed(2) : "N/D"}
+- Supporto S2: ${sr ? "€"+sr.s2.toFixed(2) : "N/D"}
+- Max periodo: ${sr ? "€"+sr.high.toFixed(2) : "N/D"}
+- Min periodo: ${sr ? "€"+sr.low.toFixed(2) : "N/D"}
+
+Fondamentali:
 - Fair Value: ${fv}
 - Rialzo analisti: ${upside != null ? upside+"%" : "N/D"}
 - P/E: ${pe ? pe+"x" : "N/D"}
-- Max Drawdown (1y): ${maxDD != null ? maxDD+"%" : "N/D"}
+
+Rischio (1 anno):
+- Max Drawdown: ${maxDD != null ? maxDD+"%" : "N/D"}
 - Sortino: ${sortino != null ? sortino : "N/D"}
 - Volatilità: ${volatility != null ? volatility+"%" : "N/D"}
 
@@ -2204,6 +2318,7 @@ async function sendTG(message) {
     ]);
   } catch(e) {}
 }
+
 
 
 </script>
