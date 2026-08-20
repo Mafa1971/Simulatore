@@ -931,13 +931,13 @@ function renderWatchlist() {
       const pp = w.current_price_ref, thr = 0.03;
       if (w.alert_price) {
         const res = w.alert_price;
-        if (pp >= res*(1-thr) && pp <= res*(1+thr)) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ff6b6b;background:#ff6b6b22;border:1px solid #ff6b6b;padding:2px 6px;border-radius:6px;animation:pulse 1.5s infinite;">🔴 ZONA RESISTENZA</span>`;
-        else if (pp > res*(1+thr)) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ffd23f;background:#ffd23f22;border:1px solid #ffd23f;padding:2px 6px;border-radius:6px;animation:pulse 1.5s infinite;">🚀 BREAKOUT</span>`;
+        if (pp >= res && pp <= res * 1.01) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ff6b6b;background:#ff6b6b22;border:1px solid #ff6b6b;padding:2px 6px;border-radius:6px;animation:pulse 1.5s infinite;">🔴 RESISTENZA RAGGIUNTA</span>`;
+        else if (pp > res * 1.01) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ffd23f;background:#ffd23f22;border:1px solid #ffd23f;padding:2px 6px;border-radius:6px;animation:pulse 1.5s infinite;">🚀 BREAKOUT</span>`;
       }
       if (w.alert_support) {
         const sup = w.alert_support;
-        if (pp >= sup*(1-thr) && pp <= sup*(1+thr)) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ffd23f;background:#ffd23f22;border:1px solid #ffd23f;padding:2px 6px;border-radius:6px;margin-left:3px;animation:pulse 1.5s infinite;">🟡 ZONA SUPPORTO</span>`;
-        else if (pp < sup*(1-thr)) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ff6b6b;background:#ff6b6b22;padding:2px 6px;border-radius:6px;margin-left:3px;">⚠️ SOTTO SUPPORTO</span>`;
+        if (pp <= sup && pp >= sup * 0.99) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ffd23f;background:#ffd23f22;border:1px solid #ffd23f;padding:2px 6px;border-radius:6px;margin-left:3px;animation:pulse 1.5s infinite;">🟡 SUPPORTO RAGGIUNTO</span>`;
+        else if (pp < sup * 0.99) simAlertBadge += `<span style="font-size:9px;font-weight:700;color:#ff6b6b;background:#ff6b6b22;padding:2px 6px;border-radius:6px;margin-left:3px;">⚠️ SOTTO SUPPORTO</span>`;
       }
     }
     const resNoteText = w.alert_price ? `<div style="font-size:10px;color:#ff6b6b80;">🔴 R: €${w.alert_price}${w.alert_price_note?" — "+w.alert_price_note:""}</div>` : "";
@@ -1375,13 +1375,13 @@ window.refreshPrices = async function() {
         const res = w.alert_price;
         const keyRes = w.ticker+"_sim_res";
         const keyBreak = w.ticker+"_sim_break";
-        if (price >= res*(1-thr) && price <= res*(1+thr) && !simAlertedTickers.has(keyRes)) {
+        if (price >= res && price <= res * 1.01 && !simAlertedTickers.has(keyRes)) {
           simAlertedTickers.add(keyRes); saveSimAlerts();
           const note = w.alert_price_note ? `\n📝 ${w.alert_price_note}` : "";
-          await sendTG(`🔴 <b>ZONA RESISTENZA SIM — ${w.ticker}</b>\n\n💰 €${price.toFixed(2)}\n🎯 Resistenza: €${res}${note}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE`);
+          await sendTG(`🔴 <b>RESISTENZA RAGGIUNTA SIM — ${w.ticker}</b>\n\n💰 €${price.toFixed(2)}\n🎯 Resistenza: €${res}${note}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE`);
         }
-        if (price < res*(1-thr)) { simAlertedTickers.delete(keyRes); simAlertedTickers.delete(keyBreak); saveSimAlerts(); }
-        if (price > res*(1+thr) && !simAlertedTickers.has(keyBreak)) {
+        if (price < res) { simAlertedTickers.delete(keyRes); simAlertedTickers.delete(keyBreak); saveSimAlerts(); }
+        if (price > res * 1.01 && !simAlertedTickers.has(keyBreak)) {
           simAlertedTickers.add(keyBreak); saveSimAlerts();
           const note = w.alert_price_note ? `\n📝 ${w.alert_price_note}` : "";
           await sendTG(`🚀 <b>BREAKOUT SIM — ${w.ticker}</b>\n\n💰 €${price.toFixed(2)}\n🎯 Resistenza superata: €${res}${note}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE`);
@@ -1390,12 +1390,12 @@ window.refreshPrices = async function() {
       if (w.alert_support) {
         const sup = w.alert_support;
         const keySup = w.ticker+"_sim_sup";
-        if (price >= sup*(1-thr) && price <= sup*(1+thr) && !simAlertedTickers.has(keySup)) {
+        if (price <= sup && price >= sup * 0.99 && !simAlertedTickers.has(keySup)) {
           simAlertedTickers.add(keySup); saveSimAlerts();
           const note = w.alert_support_note ? `\n📝 ${w.alert_support_note}` : "";
-          await sendTG(`🟡 <b>ZONA SUPPORTO SIM — ${w.ticker}</b>\n\n💰 €${price.toFixed(2)}\n🎯 Supporto: €${sup}${note}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE`);
+          await sendTG(`🟡 <b>SUPPORTO RAGGIUNTO SIM — ${w.ticker}</b>\n\n💰 €${price.toFixed(2)}\n🎯 Supporto: €${sup}${note}\n👤 ${currentUser.toUpperCase()} — SIMULAZIONE`);
         }
-        if (price > sup*(1+thr)) { simAlertedTickers.delete(keySup); saveSimAlerts(); }
+        if (price > sup) { simAlertedTickers.delete(keySup); saveSimAlerts(); }
       }
     }
   for (const w of watchlist) {
