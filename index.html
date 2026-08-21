@@ -2132,6 +2132,10 @@ async function loadSimAIChart(ticker, range) {
     el("simAIStatus").style.display = "none";
     const pc = el("simAIPriceCanvas");
     if (!pc) return;
+    // Force explicit pixel dimensions for Chart.js
+    const chartCont = el("simAIChartContainer");
+    pc.width = (chartCont?.offsetWidth || 600);
+    pc.height = 230;
     pc.style.display = "block";
 
     if (simAILineChart) { simAILineChart.destroy(); simAILineChart = null; }
