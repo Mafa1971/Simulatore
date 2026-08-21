@@ -848,7 +848,7 @@ function renderRotationPanel() {
   const sellScoreThreshold = Math.max(absThreshold, relThreshold);
 
   const toSell = simPositions.filter(p => {
-    const lowScore = (p.score||5) < sellScoreThreshold;
+    const lowScore = (p.score||5) <= sellScoreThreshold;
     const stopHit = p.stop_loss && p.current_price && p.current_price <= p.stop_loss;
     return lowScore || stopHit;
   });
