@@ -106,6 +106,16 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
 
     <!-- TAB DASHBOARD -->
     <div id="tabDashboard" class="tab-content active">
+
+      <!-- REGIME DI MERCATO -->
+      <div class="panel" style="border:1px solid #ffd23f44;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="panel-title" style="margin:0;">🌡️ REGIME DI MERCATO</div>
+          <button onclick="calcMarketRegime()" style="background:none;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer;">↺ Aggiorna</button>
+        </div>
+        <div id="regimePanel"><div style="font-size:11px;color:var(--dim);text-align:center;padding:10px;">⏳ Calcolo regime in corso...</div></div>
+      </div>
+
       <div class="panel">
         <div class="panel-title">⚙️ CONTROLLI
           <select id="simProfile" onchange="saveSimPrefs()" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:8px;font-size:11px;">
@@ -115,6 +125,12 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
             <option value="allweather">🌦️ All Weather (10)</option>
             <option value="buffett">🎩 Buffett (10)</option>
             <option value="tech">💻 Tech Focus (10)</option>
+            <option value="growth">📈 Growth (12)</option>
+            <option value="quality">🏆 Quality (10)</option>
+            <option value="momentum">⚡ Momentum (12)</option>
+            <option value="contrarian">🔄 Contrarian (8)</option>
+            <option value="dividend">💰 Dividend (15)</option>
+            <option value="dynamic">🌡️ Dinamico (auto)</option>
           </select>
           <input type="number" id="simCapital" onchange="saveSimPrefs()" value="20000" step="1000"
             style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;width:120px;" placeholder="Capitale €">
@@ -378,18 +394,30 @@ const USERS = {
 const AUTH_KEY = "sim_auth_v3";
 
 const SIM_PROFILES = {
-  conservativo: { name:"Conservativo", icon:"🛡️", n:8,
+  conservativo: { name:"Conservativo", icon:"🛡️", n:8,  minScore:7, maxScore:10,
     weights:{"Finanziario":30,"Utilities":25,"Salute":20,"Energia":15,"Consumer":10} },
-  bilanciato:   { name:"Bilanciato",   icon:"⚖️", n:10,
+  bilanciato:   { name:"Bilanciato",   icon:"⚖️", n:10, minScore:6, maxScore:10,
     weights:{"Finanziario":25,"Utilities":15,"Salute":15,"Energia":15,"Tecnologia":15,"Consumer":15} },
-  aggressivo:   { name:"Aggressivo",   icon:"🚀", n:12,
+  aggressivo:   { name:"Aggressivo",   icon:"🚀", n:12, minScore:5, maxScore:10,
     weights:{"Tecnologia":35,"Finanziario":25,"Consumer":20,"Salute":10,"Energia":10} },
-  allweather:   { name:"All Weather",  icon:"🌦️", n:10,
+  allweather:   { name:"All Weather",  icon:"🌦️", n:10, minScore:6, maxScore:10,
     weights:{"Finanziario":25,"Utilities":25,"Energia":20,"Salute":15,"Tecnologia":15} },
-  buffett:      { name:"Buffett",      icon:"🎩", n:10,
+  buffett:      { name:"Buffett",      icon:"🎩", n:10, minScore:7, maxScore:10, fvRequired:true,
     weights:{"Finanziario":40,"Consumer":25,"Utilities":15,"Salute":10,"Energia":10} },
-  tech:         { name:"Tech Focus",   icon:"💻", n:10,
-    weights:{"Tecnologia":50,"Finanziario":20,"Consumer":15,"Salute":15} }
+  tech:         { name:"Tech Focus",   icon:"💻", n:10, minScore:6, maxScore:10,
+    weights:{"Tecnologia":50,"Finanziario":20,"Consumer":15,"Salute":15} },
+  growth:       { name:"Growth",       icon:"📈", n:12, minScore:6, maxScore:10,
+    weights:{"Tecnologia":35,"Salute":20,"Consumer":20,"Finanziario":15,"Industriali":10} },
+  quality:      { name:"Quality",      icon:"🏆", n:10, minScore:7, maxScore:10, piotroskiMin:6,
+    weights:{"Finanziario":25,"Salute":20,"Tecnologia":20,"Consumer":20,"Utilities":15} },
+  momentum:     { name:"Momentum",     icon:"⚡", n:12, minScore:6, rsiMin:50, rsiMax:70,
+    weights:{"Tecnologia":30,"Consumer":25,"Finanziario":20,"Salute":15,"Industriali":10} },
+  contrarian:   { name:"Contrarian",   icon:"🔄", n:8,  maxScore:6, rsiMax:40, fvRequired:true,
+    weights:{"Finanziario":30,"Utilities":20,"Energia":20,"Salute":15,"Consumer":15} },
+  dividend:     { name:"Dividend",     icon:"💰", n:15, minScore:5, cfRequired:true,
+    weights:{"Utilities":30,"Finanziario":25,"Energia":20,"Consumer":15,"Salute":10} },
+  dynamic:      { name:"Dinamico",     icon:"🌡️", n:10, minScore:5,
+    weights:{"Finanziario":20,"Tecnologia":20,"Salute":15,"Consumer":15,"Utilities":15,"Energia":15} }
 };
 
 const OLD_TICKERS = [
@@ -511,7 +539,19 @@ function loadSimPrefs() {
     if (capital && el("simCapital")) el("simCapital").value = capital;
   } catch(e) {}
 }
-function getProf() { return SIM_PROFILES[getProfile()]; }
+function getProf() {
+  const profile = getProfile();
+  if (profile === "dynamic" && regimeData) {
+    // Select profile based on regime score
+    const score = regimeData.score;
+    if (score >= 80) return {...SIM_PROFILES.aggressivo, name:"Dinamico → Aggressivo"};
+    if (score >= 60) return {...SIM_PROFILES.growth, name:"Dinamico → Growth"};
+    if (score >= 40) return {...SIM_PROFILES.bilanciato, name:"Dinamico → Bilanciato"};
+    if (score >= 20) return {...SIM_PROFILES.conservativo, name:"Dinamico → Conservativo"};
+    return {...SIM_PROFILES.allweather, name:"Dinamico → All Weather"};
+  }
+  return SIM_PROFILES[profile] || SIM_PROFILES.bilanciato;
+}
 
 function getInvested() {
   return simPositions.reduce((s,p) => s + (p.buy_price||0)*(p.qty||0), 0);
@@ -526,6 +566,8 @@ async function init() {
   loadSimAlerts();
   loadSimPrefs();
   await loadAllData();
+  // Calcola regime dopo il caricamento dati
+  setTimeout(() => calcMarketRegime(), 2000);
   if (watchlist.length === 0) await loadOldPortfolio();
   try {
     const saved = localStorage.getItem("sim_ranking_" + currentUser);
@@ -658,12 +700,13 @@ function renderPositionsTable() {
     return `<th onclick="simPosSort('${key}')" style="cursor:pointer;padding:7px 8px;font-size:9px;color:${active?'var(--gold)':'var(--dim)'};letter-spacing:1px;text-transform:uppercase;user-select:none;">${label}${arrow}</th>`;
   };
 
-  let h = `<div style="overflow-x:auto;"><table>
+  let h = `<div style="overflow-x:auto;max-height:500px;overflow-y:auto;"><table style="width:100%;border-collapse:collapse;">
+    <thead style="position:sticky;top:0;z-index:10;background:var(--panel2);">
     <tr>
-      ${sTh("Ticker","ticker")}<th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Nome</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Settore</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Qty</th>
-      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">P.Acq</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Attuale</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Investito</th>${sTh("Val.Att.","value")}
+      ${sTh("Ticker","ticker")}<th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;white-space:nowrap;">Nome</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Settore</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Qty</th>
+      <th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;white-space:nowrap;">P.Acq</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Attuale</th><th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Investito</th>${sTh("Val.Att.","value")}
       ${sTh("P&L %","pl")}${sTh("P&L €","pl")}<th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Stop</th>${sTh("Score","score")}<th style="padding:7px 8px;font-size:9px;color:var(--dim);text-transform:uppercase;">Data</th><th></th>
-    </tr>`;
+    </tr></thead><tbody>`;
 
   sortedPos.forEach(p => {
     const price = p.current_price || p.buy_price;
@@ -791,16 +834,37 @@ function renderRotationPanel() {
   const liq = getLiquidity();
   const currentTickers = simPositions.map(p => p.ticker);
 
-  // Select best by profile
+  // Select best by profile (regime-aware)
   const selected = selectByProfile(lastRanking, prof);
-  const toKeep = simPositions.filter(p => selected.find(s => s.ticker === p.ticker));
-  const toSell = simPositions.filter(p => !selected.find(s => s.ticker === p.ticker));
+  // Regime-aware sell threshold
+  const regimeScore = regimeData?.score || 50;
+  const sellScoreThreshold = regimeScore >= 60 ? 3 : regimeScore >= 40 ? 4 : 5; // più severo in RISK-OFF
+
+  const toKeep = simPositions.filter(p => selected.find(s => s.ticker === p.ticker) || (p.score||0) >= sellScoreThreshold + 2);
+  const toSell = simPositions.filter(p => {
+    // Sell if not in optimal selection AND score below threshold
+    const inSelected = selected.find(s => s.ticker === p.ticker);
+    const lowScore = (p.score||5) < sellScoreThreshold;
+    const stopHit = p.stop_loss && p.current_price && p.current_price <= p.stop_loss;
+    return (!inSelected && lowScore) || stopHit;
+  });
   const toBuy = selected.filter(s => !currentTickers.includes(s.ticker));
 
-  // Calculate per-position budget based on available liquidity
+  // Per-position budget
   const perPos = selected.length > 0 ? capital / selected.length : 0;
 
-  let h = `<div style="font-size:11px;color:var(--dim);margin-bottom:12px;">
+  // Regime info
+  const regimeInfo = regimeData ? `
+    <div style="background:#ffd23f11;border:1px solid #ffd23f33;border-radius:8px;padding:10px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">${regimeData.regimeEmoji}</span>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:${regimeData.regimeColor};">Regime: ${regimeData.regime} (${regimeData.score}/100)</div>
+        <div style="font-size:10px;color:var(--dim);">Profilo applicato: <strong>${prof.name}</strong> — ${regimeData.profileDesc}</div>
+      </div>
+    </div>` : "";
+
+  let h = `${regimeInfo}
+  <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">
     Liquidità disponibile: <strong style="color:${liq<1000?'#ff6b6b':'#4fa3ff'};">€${liq.toFixed(0)}</strong> |
     Budget per posizione: <strong style="color:var(--gold);">€${perPos.toFixed(0)}</strong>
   </div>
@@ -1692,16 +1756,31 @@ el("backupInput")?.addEventListener("change", async (e) => {
 
 // ── SELECT BY PROFILE ─────────────────────────────────────────────────
 function selectByProfile(scored, prof) {
+  // Filter by profile criteria
+  let filtered = scored.filter(s => {
+    if (prof.minScore && (s.score||0) < prof.minScore) return false;
+    if (prof.maxScore && prof.maxScore < 10 && (s.score||0) > prof.maxScore) return false;
+    if (prof.rsiMin && (s.rsi||50) < prof.rsiMin) return false;
+    if (prof.rsiMax && (s.rsi||50) > prof.rsiMax) return false;
+    if (prof.fvRequired && s.fair_value_label && !["Affare","Sottovalutato","Moderatamente sottovalutato"].includes(s.fair_value_label)) return false;
+    if (prof.cfRequired && s.cash_flow_label && !["Eccellente","Ottima","Buona"].includes(s.cash_flow_label)) return false;
+    if (prof.piotroskiMin && s.piotroski && s.piotroski < prof.piotroskiMin) return false;
+    return true;
+  });
+
+  // If too few after filtering, relax criteria
+  if (filtered.length < 3) filtered = scored;
+
   const sel=[],sc={},total=Object.values(prof.weights).reduce((s,v)=>s+v,0);
   const slots={};
   Object.entries(prof.weights).forEach(([sec,pct])=>{slots[sec]=Math.max(1,Math.round((pct/total)*prof.n));});
-  for (const s of scored) {
+  for (const s of filtered) {
     const sec=s.sector||"Altro";
     const match=Object.keys(slots).find(k=>sec.toLowerCase().includes(k.toLowerCase())||k.toLowerCase().includes(sec.toLowerCase()));
     if (match&&(sc[match]||0)<slots[match]) { sel.push(s); sc[match]=(sc[match]||0)+1; }
     if (sel.length>=prof.n) break;
   }
-  for (const s of scored) { if (sel.length>=prof.n) break; if (!sel.find(x=>x.ticker===s.ticker)) sel.push(s); }
+  for (const s of filtered) { if (sel.length>=prof.n) break; if (!sel.find(x=>x.ticker===s.ticker)) sel.push(s); }
   return sel.slice(0,prof.n);
 }
 
@@ -2381,6 +2460,185 @@ function calcSupportResistance(closes, highs, lows, lookback = 60) {
   const close = closes[closes.length-1];
   const pivot = (high + low + close) / 3;
   return { pivot, high, low, close, r1:2*pivot-low, r2:pivot+(high-low), s1:2*pivot-high, s2:pivot-(high-low) };
+}
+
+
+// ── REGIME DI MERCATO ─────────────────────────────────────────────────
+let regimeData = null;
+let lastRegimeAlert = null;
+
+async function calcMarketRegime() {
+  try {
+    // 1. SP500 trend (sopra/sotto SMA200)
+    const spxData = await fetchYahoo("^GSPC", "1y", "1d");
+    const spxCloses = spxData?.chart?.result?.[0]?.indicators?.quote?.[0]?.close?.filter(v=>v!=null) || [];
+    const spxSMA200 = spxCloses.length >= 200 ? spxCloses.slice(-200).reduce((a,b)=>a+b,0)/200 : null;
+    const spxCurrent = spxCloses[spxCloses.length-1];
+    const spxTrend = spxSMA200 ? (spxCurrent > spxSMA200 ? 1 : -1) : 0;
+    const spxStrength = spxSMA200 ? ((spxCurrent - spxSMA200) / spxSMA200 * 100) : 0;
+
+    // 2. Score medio portafoglio e watchlist
+    const posScores = simPositions.map(p => p.score).filter(s => s != null);
+    const wlScores = watchlist.map(w => w.score).filter(s => s != null);
+    const avgPosScore = posScores.length ? posScores.reduce((a,b)=>a+b,0)/posScores.length : 5;
+    const avgWlScore = wlScores.length ? wlScores.reduce((a,b)=>a+b,0)/wlScores.length : 5;
+
+    // 3. RSI medio posizioni
+    const posRSI = simPositions.map(p => p.rsi).filter(r => r != null);
+    const avgRSI = posRSI.length ? posRSI.reduce((a,b)=>a+b,0)/posRSI.length : 50;
+
+    // 4. % posizioni in perdita (stress)
+    const posInLoss = simPositions.filter(p => p.current_price && p.current_price < p.buy_price).length;
+    const stressRatio = simPositions.length > 0 ? posInLoss / simPositions.length : 0;
+
+    // 5. Volatilità SP500 (std dev ultimi 20 giorni)
+    let spxVol = 20; // default medio
+    if (spxCloses.length >= 21) {
+      const returns = spxCloses.slice(-21).slice(1).map((c,i) => (c - spxCloses.slice(-21)[i]) / spxCloses.slice(-21)[i]);
+      const avg = returns.reduce((a,b)=>a+b,0)/returns.length;
+      spxVol = Math.sqrt(returns.reduce((a,r)=>a+Math.pow(r-avg,2),0)/returns.length) * Math.sqrt(252) * 100;
+    }
+
+    // ── CALCOLO INDICE REGIME (0-100) ─────────────────────────────
+    let regimeScore = 50; // base neutro
+
+    // SP500 trend (+/-20 punti)
+    regimeScore += spxTrend * Math.min(20, Math.abs(spxStrength) * 2);
+
+    // Score medio portafoglio (+/-15 punti)
+    regimeScore += (avgPosScore - 5) * 3;
+
+    // RSI medio (+/-10 punti)
+    if (avgRSI > 60) regimeScore += 10;
+    else if (avgRSI > 50) regimeScore += 5;
+    else if (avgRSI < 40) regimeScore -= 10;
+    else if (avgRSI < 50) regimeScore -= 5;
+
+    // Stress posizioni (-15 punti se molte in perdita)
+    regimeScore -= stressRatio * 15;
+
+    // Volatilità (alta vol = risk-off)
+    if (spxVol > 30) regimeScore -= 15;
+    else if (spxVol > 20) regimeScore -= 5;
+    else if (spxVol < 12) regimeScore += 10;
+
+    // Score watchlist (opportunità disponibili)
+    regimeScore += (avgWlScore - 5) * 2;
+
+    regimeScore = Math.max(0, Math.min(100, regimeScore));
+
+    // ── CLASSIFICAZIONE ───────────────────────────────────────────
+    let regime, regimeColor, regimeEmoji, profileSuggested, profileDesc;
+    if (regimeScore >= 80) {
+      regime = "BULL"; regimeColor = "#00d4b8"; regimeEmoji = "🚀";
+      profileSuggested = "Aggressivo / Tech Focus";
+      profileDesc = "Mercato fortemente rialzista — massimizza l'esposizione";
+    } else if (regimeScore >= 60) {
+      regime = "RISK-ON"; regimeColor = "#80ed99"; regimeEmoji = "🟢";
+      profileSuggested = "Growth / Momentum";
+      profileDesc = "Trend positivo — favorisci titoli growth e momentum";
+    } else if (regimeScore >= 40) {
+      regime = "NEUTRO"; regimeColor = "#ffd23f"; regimeEmoji = "🟡";
+      profileSuggested = "Bilanciato / Quality";
+      profileDesc = "Mercato laterale — privilegia qualità e diversificazione";
+    } else if (regimeScore >= 20) {
+      regime = "RISK-OFF"; regimeColor = "#ff9f1c"; regimeEmoji = "🔴";
+      profileSuggested = "Conservativo / Dividend";
+      profileDesc = "Segnali di debolezza — riduci rischio, favorisci difensivi";
+    } else {
+      regime = "BEAR"; regimeColor = "#ff6b6b"; regimeEmoji = "🐻";
+      profileSuggested = "All Weather / Cash";
+      profileDesc = "Mercato ribassista — protezione capitale prioritaria";
+    }
+
+    regimeData = {
+      score: Math.round(regimeScore), regime, regimeColor, regimeEmoji,
+      profileSuggested, profileDesc,
+      indicators: {
+        spxTrend: spxTrend > 0 ? "Sopra SMA200 ✅" : "Sotto SMA200 ❌",
+        spxStrength: spxStrength.toFixed(1) + "%",
+        avgPosScore: avgPosScore.toFixed(1),
+        avgWlScore: avgWlScore.toFixed(1),
+        avgRSI: avgRSI.toFixed(0),
+        stressRatio: (stressRatio * 100).toFixed(0) + "%",
+        spxVol: spxVol.toFixed(1) + "%"
+      }
+    };
+
+    renderRegime();
+
+    // Alert Telegram se cambia regime
+    if (lastRegimeAlert !== regime) {
+      lastRegimeAlert = regime;
+      try {
+        await sendTG(`${regimeEmoji} <b>CAMBIO REGIME — ${regime}</b>\n\n📊 Indice: ${Math.round(regimeScore)}/100\n💡 Profilo suggerito: ${profileSuggested}\n📝 ${profileDesc}\n👤 ${currentUser.toUpperCase()}`);
+      } catch(e) {}
+    }
+  } catch(e) { console.error("Regime calc error:", e); }
+}
+
+function renderRegime() {
+  const wrap = document.getElementById("regimePanel");
+  if (!wrap || !regimeData) return;
+  const d = regimeData;
+  const barWidth = d.score;
+
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:28px;">${d.regimeEmoji}</span>
+          <div>
+            <div style="font-size:18px;font-weight:800;color:${d.regimeColor};">${d.regime}</div>
+            <div style="font-size:11px;color:var(--dim);">${d.profileDesc}</div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">PROFILO SUGGERITO</div>
+        <div style="font-size:14px;font-weight:700;color:${d.regimeColor};">${d.profileSuggested}</div>
+      </div>
+    </div>
+
+    <!-- BARRA REGIME -->
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-bottom:4px;">
+        <span>🐻 BEAR</span><span>🔴 RISK-OFF</span><span>🟡 NEUTRO</span><span>🟢 RISK-ON</span><span>🚀 BULL</span>
+      </div>
+      <div style="background:#1a2236;border-radius:8px;height:12px;position:relative;overflow:hidden;">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${barWidth}%;background:linear-gradient(90deg,#ff6b6b,#ff9f1c,#ffd23f,#80ed99,#00d4b8);border-radius:8px;transition:width 0.5s;"></div>
+        <div style="position:absolute;top:0;left:${barWidth}%;transform:translateX(-50%);width:3px;height:100%;background:#fff;border-radius:2px;"></div>
+      </div>
+      <div style="text-align:right;font-size:10px;color:${d.regimeColor};font-weight:700;margin-top:2px;">${d.score}/100</div>
+    </div>
+
+    <!-- INDICATORI -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">
+      <div style="background:var(--panel);border-radius:8px;padding:8px;">
+        <div style="font-size:9px;color:var(--dim);">SP500 Trend</div>
+        <div style="font-size:11px;font-weight:700;">${d.indicators.spxTrend}</div>
+        <div style="font-size:9px;color:var(--dim);">dist. SMA200: ${d.indicators.spxStrength}</div>
+      </div>
+      <div style="background:var(--panel);border-radius:8px;padding:8px;">
+        <div style="font-size:9px;color:var(--dim);">Score Port.</div>
+        <div style="font-size:11px;font-weight:700;">${d.indicators.avgPosScore}/10</div>
+        <div style="font-size:9px;color:var(--dim);">WL: ${d.indicators.avgWlScore}/10</div>
+      </div>
+      <div style="background:var(--panel);border-radius:8px;padding:8px;">
+        <div style="font-size:9px;color:var(--dim);">RSI Medio</div>
+        <div style="font-size:11px;font-weight:700;">${d.indicators.avgRSI}</div>
+      </div>
+      <div style="background:var(--panel);border-radius:8px;padding:8px;">
+        <div style="font-size:9px;color:var(--dim);">Stress Port.</div>
+        <div style="font-size:11px;font-weight:700;color:${parseFloat(d.indicators.stressRatio)>50?"#ff6b6b":"#00d4b8"};">${d.indicators.stressRatio}</div>
+        <div style="font-size:9px;color:var(--dim);">pos. in perdita</div>
+      </div>
+      <div style="background:var(--panel);border-radius:8px;padding:8px;">
+        <div style="font-size:9px;color:var(--dim);">Volatilità SP500</div>
+        <div style="font-size:11px;font-weight:700;color:${parseFloat(d.indicators.spxVol)>25?"#ff6b6b":parseFloat(d.indicators.spxVol)>15?"#ffd23f":"#00d4b8"};">${d.indicators.spxVol}</div>
+        <div style="font-size:9px;color:var(--dim);">annualizzata</div>
+      </div>
+    </div>`;
 }
 
 async function sendTG(message) {
