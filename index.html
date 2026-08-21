@@ -272,12 +272,32 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
       </div>
     </div>
 
-    <!-- GRAFICO -->
+    <!-- GRAFICO - canvas fisso nell'HTML -->
     <div style="margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid var(--line);">
-      <div id="simAIChartContainer" style="height:280px;"></div>
+      <div style="padding:8px 10px;background:var(--panel2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+        <div id="simAIChartLegend" style="font-size:10px;color:var(--dim);">
+          <span style="color:#ff9f1c;">─</span> Prezzo
+          <span style="color:#00d4b8;margin-left:6px;">─</span> SMA21
+          <span style="color:#ff0000;margin-left:6px;">─</span> SMA50
+          <span style="color:#c77dff;margin-left:6px;">- -</span> SMA200
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select id="simAIChartRange" style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;">
+            <option value="3mo">3 Mesi</option>
+            <option value="6mo" selected>6 Mesi</option>
+            <option value="1y">1 Anno</option>
+            <option value="2y">2 Anni</option>
+          </select>
+          <a id="simAITVLink" href="#" target="_blank" style="font-size:10px;color:#4fa3ff;text-decoration:none;">📈 TV →</a>
+        </div>
+      </div>
+      <div id="simAIStatus" style="font-size:11px;color:var(--dim);text-align:center;padding:20px;display:none;">⏳ Caricamento...</div>
+      <div style="padding:6px 10px;height:240px;">
+        <canvas id="simAIPriceCanvas"></canvas>
+      </div>
       <div style="height:90px;border-top:1px solid var(--line);padding:6px 10px;background:var(--panel2);">
         <div style="font-size:9px;color:var(--dim);margin-bottom:4px;">VOLUME | <span style="color:#00d4b8;">─</span> Rialzo <span style="color:#ff6b6b;">─</span> Ribasso <span style="color:#ffd23f;">─</span> MA20</div>
-        <canvas id="simAIVolCanvas" style="width:100%;height:65px;"></canvas>
+        <canvas id="simAIVolCanvas" style="height:65px;"></canvas>
       </div>
     </div>
 
@@ -298,9 +318,11 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
         <button onclick="askSimAI()" class="btn primary">Chiedi →</button>
       </div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-        <button onclick="setSimQ('Analisi tecnica completa')" class="btn ghost" style="font-size:10px;padding:3px 8px;">📊 Analisi</button>
-        <button onclick="setSimQ('È un buon momento per entrare?')" class="btn ghost" style="font-size:10px;padding:3px 8px;">🎯 Entrare?</button>
-        <button onclick="setSimQ('Quali sono i rischi principali?')" class="btn ghost" style="font-size:10px;padding:3px 8px;">⚠ Rischi</button>
+        <button onclick="setSimQ('Analisi tecnica completa: trend, medie mobili, RSI, MACD e momentum attuale')" class="btn ghost" style="font-size:10px;padding:3px 8px;">📊 Analisi</button>
+        <button onclick="setSimQ('Dove sono i livelli chiave di supporto e resistenza? Considera POC, Swing High/Low e FVG aperti')" class="btn ghost" style="font-size:10px;padding:3px 8px;">🎯 Livelli S/R</button>
+        <button onclick="setSimQ('È un buon momento per entrare o meglio aspettare un pattern di conferma?')" class="btn ghost" style="font-size:10px;padding:3px 8px;">⏱ Entry</button>
+        <button onclick="setSimQ('Analisi del rischio: max drawdown, Sortino, volatilità e possibile stop loss ottimale')" class="btn ghost" style="font-size:10px;padding:3px 8px;">⚠️ Rischio</button>
+        <button onclick="setSimQ('Dammi un giudizio complessivo: tecnica, fondamentali e rischio. Comprare, aspettare o evitare?')" class="btn ghost" style="font-size:10px;padding:3px 8px;">🏆 Giudizio</button>
       </div>
     </div>
   </div>
@@ -2082,36 +2104,23 @@ window.openSimAI = async function(ticker) {
 
 async function loadSimAIChart(ticker, range) {
   const r = range || el("simAIChartRange")?.value || "6mo";
-  const container = el("simAIChartContainer");
-  if (!container) return;
   const tvUrl = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(getSimTVTicker(ticker))}`;
 
-  container.innerHTML = `
-    <div style="height:100%;padding:10px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:10px;color:var(--dim);">${ticker}</span>
-          <span style="font-size:10px;color:var(--dim);">
-            <span style="color:#ff9f1c;">─</span> Prezzo
-            <span style="color:#00d4b8;margin-left:4px;">─</span> SMA21
-            <span style="color:#ff0000;margin-left:4px;">─</span> SMA50
-            <span style="color:#c77dff;margin-left:4px;">- -</span> SMA200
-          </span>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <select id="simAIChartRange" onchange="loadSimAIChart('${ticker}')"
-            style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;">
-            <option value="3mo" ${r==='3mo'?'selected':''}>3 Mesi</option>
-            <option value="6mo" ${r==='6mo'?'selected':''}>6 Mesi</option>
-            <option value="1y" ${r==='1y'?'selected':''}>1 Anno</option>
-            <option value="2y" ${r==='2y'?'selected':''}>2 Anni</option>
-          </select>
-          <a href="${tvUrl}" target="_blank" style="font-size:10px;color:#4fa3ff;text-decoration:none;">📈 TV →</a>
-        </div>
-      </div>
-      <div id="simAIStatus" style="font-size:11px;color:var(--dim);text-align:center;padding:10px;">⏳ Caricamento...</div>
-      <canvas id="simAIPriceCanvas" style="display:none;width:100%;height:230px;"></canvas>
-    </div>`;
+  // Update controls
+  const tvLink = el("simAITVLink");
+  if (tvLink) tvLink.href = tvUrl;
+  const rangeSelect = el("simAIChartRange");
+  if (rangeSelect) {
+    rangeSelect.value = r;
+    rangeSelect.onchange = () => loadSimAIChart(ticker, el("simAIChartRange").value);
+  }
+
+  const statusEl = el("simAIStatus");
+  const pc = el("simAIPriceCanvas");
+  const vc = el("simAIVolCanvas");
+  if (!pc) return;
+
+  if (statusEl) { statusEl.textContent = "⏳ Caricamento..."; statusEl.style.display = "block"; }
 
   try {
     const data = await fetchYahoo(ticker, r, "1d");
@@ -2119,32 +2128,26 @@ async function loadSimAIChart(ticker, range) {
     const timestamps = result?.timestamp || [];
     const closes = result?.indicators?.quote?.[0]?.close || [];
     const volumes = result?.indicators?.quote?.[0]?.volume || [];
+    const highs = result?.indicators?.quote?.[0]?.high || [];
+    const lows = result?.indicators?.quote?.[0]?.low || [];
+
     if (closes.filter(v=>v!=null).length < 5) {
-      el("simAIStatus").textContent = "Dati insufficienti";
+      if (statusEl) statusEl.textContent = "Dati insufficienti";
       return;
     }
+
     const sma21 = closes.map((_,i) => { const s=closes.slice(Math.max(0,i-20),i+1).filter(v=>v!=null); return s.length>=10?s.reduce((a,b)=>a+b,0)/s.length:null; });
     const sma50 = closes.map((_,i) => { const s=closes.slice(Math.max(0,i-49),i+1).filter(v=>v!=null); return s.length>=20?s.reduce((a,b)=>a+b,0)/s.length:null; });
     const sma200 = closes.map((_,i) => { const s=closes.slice(Math.max(0,i-199),i+1).filter(v=>v!=null); return s.length>=50?s.reduce((a,b)=>a+b,0)/s.length:null; });
     const volSma20 = volumes.map((_,i) => { const s=volumes.slice(Math.max(0,i-19),i+1).filter(v=>v!=null&&v>0); return s.length>=5?s.reduce((a,b)=>a+b,0)/s.length:null; });
     const labels = timestamps.map(ts => new Date(ts*1000).toLocaleDateString("it-IT",{month:"short",day:"numeric"}));
 
-    el("simAIStatus").style.display = "none";
-    const pc = el("simAIPriceCanvas");
-    if (!pc) return;
-    // Force explicit pixel dimensions for Chart.js
-    const chartCont = el("simAIChartContainer");
-    pc.width = (chartCont?.offsetWidth || 600);
-    pc.height = 230;
-    pc.style.display = "block";
+    if (statusEl) statusEl.style.display = "none";
 
     if (simAILineChart) { simAILineChart.destroy(); simAILineChart = null; }
     if (simAIVolumeChart) { simAIVolumeChart.destroy(); simAIVolumeChart = null; }
 
-    // Use requestAnimationFrame to ensure canvas is properly rendered
-    await new Promise(r => requestAnimationFrame(r));
-
-    // Save volume, risk metrics and SR levels
+    // Save metrics
     if (aiCurrentData && closes.length > 10) {
       const sr = calcSupportResistance(closes, highs||[], lows||[], Math.min(60, closes.length));
       if (sr) aiCurrentData._sr = sr;
@@ -2182,8 +2185,6 @@ async function loadSimAIChart(ticker, range) {
         interaction:{mode:"index",intersect:false}}
     });
 
-    // Volume panel
-    const vc = el("simAIVolCanvas");
     if (vc && volumes.length > 0) {
       const volColors = closes.map((c,i) => {
         const isUp = i>0&&c>=closes[i-1];
@@ -2198,16 +2199,18 @@ async function loadSimAIChart(ticker, range) {
         ]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{labels:{color:"#7d8aa3",font:{size:9},boxWidth:10}},
-            tooltip:{mode:"index",intersect:false,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?(c.parsed.y/1e6).toFixed(1)+"M":"--"}`}}},
+            tooltip:{mode:"index",intersect:false}},
           scales:{x:{ticks:{color:"#7d8aa3",font:{size:8},maxTicksLimit:6},grid:{color:"#1e2d45"}},
-                  y:{ticks:{color:"#7d8aa3",font:{size:8},callback:v=>(v/1e6).toFixed(0)+"M"},grid:{color:"#1e2d45"}}}}
+                  y:{ticks:{color:"#7d8aa3",font:{size:8}},grid:{color:"#1e2d45"}}}}
       });
     }
   } catch(err) {
-    const s = el("simAIStatus");
-    if (s) s.textContent = "Errore: "+err.message;
+    if (statusEl) statusEl.textContent = "Errore: "+err.message;
+    statusEl.style.display = "block";
   }
 }
+
+
 window.loadSimAIChart = loadSimAIChart;
 
 function renderSimAITechData(pos, wl) {
