@@ -2141,6 +2141,9 @@ async function loadSimAIChart(ticker, range) {
     if (simAILineChart) { simAILineChart.destroy(); simAILineChart = null; }
     if (simAIVolumeChart) { simAIVolumeChart.destroy(); simAIVolumeChart = null; }
 
+    // Use requestAnimationFrame to ensure canvas is properly rendered
+    await new Promise(r => requestAnimationFrame(r));
+
     // Save volume, risk metrics and SR levels
     if (aiCurrentData && closes.length > 10) {
       const sr = calcSupportResistance(closes, highs||[], lows||[], Math.min(60, closes.length));
