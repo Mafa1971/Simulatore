@@ -836,18 +836,23 @@ function renderRotationPanel() {
 
   // Select best by profile (regime-aware)
   const selected = selectByProfile(lastRanking, prof);
-  // Regime-aware sell threshold
+  // Regime-aware sell threshold — usa percentile relativo del portafoglio
   const regimeScore = regimeData?.score || 50;
-  const sellScoreThreshold = regimeScore >= 60 ? 3 : regimeScore >= 40 ? 4 : 5; // più severo in RISK-OFF
+  const allScores = simPositions.map(p => p.score||0).sort((a,b) => a-b);
+  const avgPortScore = allScores.length ? allScores.reduce((a,b)=>a+b,0)/allScores.length : 5;
+  // Bottom 30% del portafoglio come soglia relativa
+  const relThreshold = allScores.length >= 3 ? allScores[Math.floor(allScores.length * 0.3)] : 4;
+  // Soglia assoluta basata su regime
+  const absThreshold = regimeScore >= 60 ? 4.5 : regimeScore >= 40 ? 5 : 5.5;
+  // Usa la più alta tra le due
+  const sellScoreThreshold = Math.max(absThreshold, relThreshold);
 
-  const toKeep = simPositions.filter(p => selected.find(s => s.ticker === p.ticker) || (p.score||0) >= sellScoreThreshold + 2);
   const toSell = simPositions.filter(p => {
-    // Sell if not in optimal selection AND score below threshold
-    const inSelected = selected.find(s => s.ticker === p.ticker);
     const lowScore = (p.score||5) < sellScoreThreshold;
     const stopHit = p.stop_loss && p.current_price && p.current_price <= p.stop_loss;
-    return (!inSelected && lowScore) || stopHit;
+    return lowScore || stopHit;
   });
+  const toKeep = simPositions.filter(p => !toSell.find(s => s.ticker === p.ticker));
   const toBuy = selected.filter(s => !currentTickers.includes(s.ticker));
 
   // Per-position budget
@@ -1756,19 +1761,17 @@ el("backupInput")?.addEventListener("change", async (e) => {
 
 // ── SELECT BY PROFILE ─────────────────────────────────────────────────
 function selectByProfile(scored, prof) {
-  // Filter by profile criteria
+  // Filter by score criteria only (relax sector for small watchlists)
   let filtered = scored.filter(s => {
-    if (prof.minScore && (s.score||0) < prof.minScore) return false;
-    if (prof.maxScore && prof.maxScore < 10 && (s.score||0) > prof.maxScore) return false;
+    const minS = prof.minScore || 5;
+    if ((s.score||0) < minS) return false;
     if (prof.rsiMin && (s.rsi||50) < prof.rsiMin) return false;
     if (prof.rsiMax && (s.rsi||50) > prof.rsiMax) return false;
-    if (prof.fvRequired && s.fair_value_label && !["Affare","Sottovalutato","Moderatamente sottovalutato"].includes(s.fair_value_label)) return false;
-    if (prof.cfRequired && s.cash_flow_label && !["Eccellente","Ottima","Buona"].includes(s.cash_flow_label)) return false;
-    if (prof.piotroskiMin && s.piotroski && s.piotroski < prof.piotroskiMin) return false;
     return true;
   });
 
-  // If too few after filtering, relax criteria
+  // If too few after filtering, use all scored
+  if (filtered.length < 3) filtered = scored.filter(s => (s.score||0) >= 4);
   if (filtered.length < 3) filtered = scored;
 
   const sel=[],sc={},total=Object.values(prof.weights).reduce((s,v)=>s+v,0);
