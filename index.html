@@ -347,6 +347,7 @@ td{padding:9px 8px;border-top:1px solid #1a2030;font-size:12px;vertical-align:mi
 <script>
 
 
+
 // ── CONFIG ────────────────────────────────────────────────────────────
 const USERS = {
   fabrizio: { password: "Marinportfoglio2026.", name: "FABRIZIO" },
@@ -2069,7 +2070,14 @@ window.openSimAI = async function(ticker) {
   el("simAIChatHistory").innerHTML = "";
   el("simAIQuestion").value = "";
 
+  // Show modal first, then load chart
   el("modalSimAIOverlay").classList.add("show");
+
+  // Wait for modal to render before drawing chart
+  setTimeout(async () => {
+    await loadSimAIChart(ticker);
+    renderSimAITechData(pos, wl);
+  }, 150);
 };
 
 async function loadSimAIChart(ticker, range) {
@@ -2365,6 +2373,7 @@ async function sendTG(message) {
     ]);
   } catch(e) {}
 }
+
 
 
 
