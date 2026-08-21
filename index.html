@@ -2335,12 +2335,6 @@ Domanda: ${question}`;
   }
 };
 
-  chatEl.innerHTML += `<div style="align-self:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:10px 10px 0 10px;padding:8px 12px;font-size:12px;max-width:80%;">${question}</div>`;
-  el("simAIQuestion").value = "";
-
-
-
-
 window.simPosSort = function(key) {
   if (window.simPosSort_key === key) {
     window.simPosSortDir = window.simPosSortDir === "asc" ? "desc" : "asc";
