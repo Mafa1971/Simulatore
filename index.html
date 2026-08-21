@@ -2369,6 +2369,20 @@ function saveSimAlerts() {
 }
 
 
+// ── SUPPORTI/RESISTENZE ───────────────────────────────────────────────
+function calcSupportResistance(closes, highs, lows, lookback = 60) {
+  if (!closes || closes.length < 20) return null;
+  const lb = Math.min(lookback, closes.length);
+  const recentH = (highs||[]).slice(-lb).filter(v=>v!=null);
+  const recentL = (lows||[]).slice(-lb).filter(v=>v!=null);
+  if (!recentH.length || !recentL.length) return null;
+  const high = Math.max(...recentH);
+  const low = Math.min(...recentL);
+  const close = closes[closes.length-1];
+  const pivot = (high + low + close) / 3;
+  return { pivot, high, low, close, r1:2*pivot-low, r2:pivot+(high-low), s1:2*pivot-high, s2:pivot-(high-low) };
+}
+
 async function sendTG(message) {
   try {
     await Promise.all([
